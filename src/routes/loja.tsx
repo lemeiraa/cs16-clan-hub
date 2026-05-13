@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Crown, Shield, Star, Zap, Package } from "lucide-react";
+import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2 } from "lucide-react";
 import {
   PLANS_PRICES,
   AMMO_PACK_MIN,
@@ -11,7 +12,7 @@ import {
   SERVERS,
   type PlanTier,
 } from "@/lib/servers";
-import { supabase } from "@/integrations/supabase/client";
+import { createPixOrder, checkOrderPayment } from "@/lib/mercadopago.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/loja")({
