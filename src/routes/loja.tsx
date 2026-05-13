@@ -276,6 +276,13 @@ function CheckoutForm({
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pix, setPix] = useState<{
+    orderId: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    amount: number;
+  } | null>(null);
   const [form, setForm] = useState({
     nick: "",
     contact_email: "",
@@ -283,6 +290,20 @@ function CheckoutForm({
     steamid: "",
     server_slug: forcedServerSlug ?? SERVER_OPTIONS[0]?.slug ?? "",
   });
+
+  const createPix = useServerFn(createPixOrder);
+
+  if (pix) {
+    return (
+      <PixPanel
+        pix={pix}
+        onClose={() => {
+          setPix(null);
+          setOpen(false);
+        }}
+      />
+    );
+  }
 
   if (!open) {
     return (
@@ -302,35 +323,43 @@ function CheckoutForm({
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("orders").insert({
-      product_type: productType,
-      plan_tier: planTier ?? null,
-      ammo_packs: ammoPacks ?? null,
-      amount_brl: amount,
-      nick: form.nick,
-      contact_email: form.contact_email,
-      contact_whatsapp: form.contact_whatsapp || null,
-      steamid: form.steamid || null,
-      server_slug: form.server_slug,
-      status: "pending",
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao criar pedido", { description: error.message });
-      return;
+    try {
+      const payload =
+        productType === "plan"
+          ? {
+              product_type: "plan" as const,
+              plan_tier: planTier!,
+              nick: form.nick,
+              contact_email: form.contact_email,
+              contact_whatsapp: form.contact_whatsapp || null,
+              steamid: form.steamid || null,
+              server_slug: form.server_slug,
+            }
+          : {
+              product_type: "ammo_packs" as const,
+              ammo_packs: ammoPacks!,
+              nick: form.nick,
+              contact_email: form.contact_email,
+              contact_whatsapp: form.contact_whatsapp || null,
+              steamid: form.steamid || null,
+              server_slug: form.server_slug,
+            };
+      const result = await createPix({ data: payload });
+      setPix({
+        orderId: result.orderId,
+        qrCode: result.qrCode,
+        qrCodeBase64: result.qrCodeBase64,
+        ticketUrl: result.ticketUrl,
+        amount: result.amount,
+      });
+      toast.success("PIX gerado! Escaneie ou copie o código.");
+    } catch (err) {
+      toast.error("Erro ao gerar PIX", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setLoading(false);
     }
-    toast.success("Pedido criado!", {
-      description:
-        "Entraremos em contato com as instruções de pagamento via PIX.",
-    });
-    setOpen(false);
-    setForm({
-      nick: "",
-      contact_email: "",
-      contact_whatsapp: "",
-      steamid: "",
-      server_slug: forcedServerSlug ?? SERVER_OPTIONS[0]?.slug ?? "",
-    });
   };
 
   return (
