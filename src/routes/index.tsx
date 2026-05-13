@@ -203,7 +203,7 @@ function PlayersCounter() {
   );
 }
 
-
+type NewsItem = {
   id: string;
   title: string;
   excerpt: string;
