@@ -41,11 +41,30 @@ export function ServerCard({ server, compact = false }: Props) {
       : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`;
 
   const mapName = !server.comingSoon ? status?.map ?? null : null;
-  const [imgFailed, setImgFailed] = useState(false);
-  useEffect(() => { setImgFailed(false); }, [mapName]);
-  const mapImg = mapName && !imgFailed
-    ? `https://image.gametracker.com/images/maps/160x120/${mapName}.jpg`
-    : null;
+
+  // Build fallback chain of map image URLs (custom maps often don't exist on GameTracker,
+  // so we also try a normalized base name like de_dust2_ng -> de_dust2).
+  const mapCandidates = (() => {
+    if (!mapName) return [] as string[];
+    const variants = new Set<string>();
+    variants.add(mapName);
+    // Strip common custom suffixes progressively
+    const stripped = mapName
+      .replace(/_(ng|pz|neon|v\d+|final|fix|fixed|b\d+|beta\d*|cz|csn|nostalgia|br|ve)$/i, "");
+    if (stripped !== mapName) variants.add(stripped);
+    // Try base prefix (everything up to second underscore): de_dust2_ng -> de_dust2
+    const m = mapName.match(/^([a-z]+_[a-z0-9]+)/i);
+    if (m && m[1] !== mapName) variants.add(m[1]);
+    const sources = (name: string) => [
+      `https://image.gametracker.com/images/maps/160x120/${name}.jpg`,
+      `https://image.gametracker.com/images/maps/320x240/${name}.jpg`,
+    ];
+    return Array.from(variants).flatMap(sources);
+  })();
+
+  const [imgIdx, setImgIdx] = useState(0);
+  useEffect(() => { setImgIdx(0); }, [mapName]);
+  const mapImg = mapCandidates[imgIdx] ?? null;
 
   return (
     <div
