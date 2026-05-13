@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import logo from "@/assets/logo-csnostalgia.jpg";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { avatarUrlFor } from "@/lib/avatars";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -14,24 +15,25 @@ const NAV = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [user, setUser] = useState<{ id: string; nick: string | null; avatar_url: string | null; email: string } | null>(null);
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     let mounted = true;
-    const check = async (uid: string | undefined) => {
+    const check = async (uid: string | undefined, email: string | undefined) => {
       if (!mounted) return;
-      if (!uid) { setIsAdmin(false); return; }
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (mounted) setIsAdmin(!!data);
+      if (!uid) { setIsAdmin(false); setUser(null); return; }
+      const [{ data: roleData }, { data: profile }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
+        supabase.from("profiles").select("nick, avatar_url").eq("id", uid).maybeSingle(),
+      ]);
+      if (!mounted) return;
+      setIsAdmin(!!roleData);
+      setUser({ id: uid, nick: profile?.nick ?? null, avatar_url: profile?.avatar_url ?? null, email: email ?? "" });
     };
-    supabase.auth.getSession().then(({ data }) => check(data.session?.user?.id));
+    supabase.auth.getSession().then(({ data }) => check(data.session?.user?.id, data.session?.user?.email));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      window.setTimeout(() => check(session?.user?.id), 0);
+      window.setTimeout(() => check(session?.user?.id, session?.user?.email), 0);
     });
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
@@ -79,12 +81,26 @@ export function SiteHeader() {
               <Shield className="h-3.5 w-3.5" /> Admin
             </Link>
           )}
-          <Link
-            to="/auth"
-            className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
-          >
-            Entrar
-          </Link>
+          {user ? (
+            <Link
+              to="/conta"
+              className="ml-2 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary transition"
+            >
+              <img
+                src={avatarUrlFor(user.nick || user.email, user.avatar_url ?? undefined)}
+                alt=""
+                className="h-7 w-7 rounded-md bg-card"
+              />
+              <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || "Conta"}</span>
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
+            >
+              Entrar
+            </Link>
+          )}
         </nav>
 
         <button
@@ -109,13 +125,23 @@ export function SiteHeader() {
                 {n.label}
               </Link>
             ))}
-            <Link
-              to="/auth"
-              onClick={() => setOpen(false)}
-              className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center mt-2"
-            >
-              Entrar
-            </Link>
+            {user ? (
+              <Link
+                to="/conta"
+                onClick={() => setOpen(false)}
+                className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md border border-border text-center mt-2 inline-flex items-center justify-center gap-2"
+              >
+                <UserIcon className="h-4 w-4" /> {user.nick || "Minha conta"}
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setOpen(false)}
+                className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center mt-2"
+              >
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
       )}
