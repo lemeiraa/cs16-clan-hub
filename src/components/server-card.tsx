@@ -83,7 +83,7 @@ export function ServerCard({ server, compact = false }: Props) {
             alt={mapName ?? ""}
             loading="lazy"
             referrerPolicy="no-referrer"
-            onError={() => setImgFailed(true)}
+            onError={() => setImgIdx((i) => i + 1)}
             className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-500"
           />
         )}
