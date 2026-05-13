@@ -39,16 +39,29 @@ function ServerDetail() {
   const { data: status, isLoading } = useQuery({
     queryKey: ["server-status", slug],
     queryFn: () => fetchStatus({ data: { slug } }),
-    refetchInterval: server.comingSoon ? false : 30_000,
-    enabled: !server.comingSoon,
+    refetchInterval: server?.comingSoon ? false : 30_000,
+    enabled: !!server && !server.comingSoon,
   });
 
+  if (loadingServer) {
+    return (
+      <section className="container mx-auto px-4 py-10">
+        <p className="text-muted-foreground">Carregando servidor...</p>
+      </section>
+    );
+  }
+  if (!server) {
+    throw notFound();
+  }
+  const srv: ServerInfo = server;
+
   const onCopy = async () => {
-    await navigator.clipboard.writeText(serverAddress(server));
+    await navigator.clipboard.writeText(serverAddress(srv));
     setCopied(true);
     toast.success("IP copiado!");
     setTimeout(() => setCopied(false), 1500);
   };
+
 
   return (
     <section className="container mx-auto px-4 py-10">
