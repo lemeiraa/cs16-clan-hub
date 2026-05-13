@@ -133,7 +133,6 @@ function ReportarPage() {
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
             to="/auth"
-            search={{ redirect: "/reportar" }}
             className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
           >
             Entrar / Cadastrar
