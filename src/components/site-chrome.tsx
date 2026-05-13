@@ -10,6 +10,7 @@ const NAV = [
   { to: "/servidores", label: "Servidores" },
   { to: "/loja", label: "Loja" },
   { to: "/regras", label: "Regras" },
+  { to: "/reportar", label: "Reportar" },
 ] as const;
 
 export function SiteHeader() {
