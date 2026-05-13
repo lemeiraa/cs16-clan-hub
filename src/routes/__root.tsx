@@ -81,7 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Comunidade CS Nostalgia: 7 servidores brasileiros e venezuelanos de Counter-Strike 1.6. 4Fun, Fy Pool Day, Zombie Plague, Pregame e mais.",
       },
-      { property: "og:title", content: "CS Nostalgia — Counter-Strike 1.6" },
+      { property: "og:title", content: "CS Nostalgia — Servidores de Counter-Strike 1.6" },
       {
         property: "og:description",
         content:
@@ -89,6 +89,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "CS Nostalgia — Servidores de Counter-Strike 1.6" },
+      { name: "description", content: "Counter Strike Hub is a website for managing Counter Strike 1.6 servers, displaying player counts, maps, and server-specific pages." },
+      { property: "og:description", content: "Counter Strike Hub is a website for managing Counter Strike 1.6 servers, displaying player counts, maps, and server-specific pages." },
+      { name: "twitter:description", content: "Counter Strike Hub is a website for managing Counter Strike 1.6 servers, displaying player counts, maps, and server-specific pages." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2634fa99-3024-46f5-a370-2563edd6aa79/id-preview-83aa8b79--3193e7e7-c2ec-4d95-8650-b70a5001cc95.lovable.app-1778675989948.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2634fa99-3024-46f5-a370-2563edd6aa79/id-preview-83aa8b79--3193e7e7-c2ec-4d95-8650-b70a5001cc95.lovable.app-1778675989948.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
