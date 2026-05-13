@@ -48,54 +48,50 @@ export function ServerCard({ server, compact = false }: Props) {
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-card",
+        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-card flex flex-col",
         "transition hover:border-accent/60 hover:-translate-y-0.5",
       )}
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-brand z-20" />
-      {mapImg && (
-        <>
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-brand z-30" />
+
+      {/* Map banner */}
+      <div className="relative aspect-[16/9] overflow-hidden bg-secondary/40">
+        {mapImg ? (
           <div
             aria-hidden
-            className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity"
+            className="absolute inset-0 bg-cover bg-center scale-105 group-hover:scale-110 transition-transform duration-500"
             style={{ backgroundImage: `url(${mapImg})` }}
           />
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-b from-card/70 via-card/85 to-card"
-          />
-        </>
-      )}
-      <div className="relative z-10 p-5 flex flex-col gap-4 [&_h3]:drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] [&_code]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{server.flag}</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                {server.mode}
-              </span>
-            </div>
-            <h3 className="font-display text-lg font-bold mt-1 truncate">
-              {server.name}
-            </h3>
+        ) : (
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-secondary to-card" />
+        )}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-card/10" />
+
+        {/* Top row: flag/mode + status */}
+        <div className="absolute inset-x-0 top-0 p-3 flex items-start justify-between gap-2 z-10">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/70 backdrop-blur-sm border border-border/50">
+            <span className="text-base leading-none">{server.flag}</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-foreground">
+              {server.mode || "CS 1.6"}
+            </span>
           </div>
           {server.comingSoon ? (
-            <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-warning/20 text-warning">
+            <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md bg-warning/90 text-warning-foreground backdrop-blur-sm">
               Em breve
             </span>
           ) : (
             <span
               className={cn(
-                "flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded",
+                "flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md backdrop-blur-sm border",
                 online
-                  ? "bg-success/20 text-success"
-                  : "bg-destructive/20 text-destructive",
+                  ? "bg-success/90 text-success-foreground border-success/40"
+                  : "bg-destructive/90 text-destructive-foreground border-destructive/40",
               )}
             >
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
-                  online ? "bg-success animate-pulse" : "bg-destructive",
+                  online ? "bg-success-foreground animate-pulse" : "bg-destructive-foreground",
                 )}
               />
               {online ? "Online" : "Offline"}
@@ -103,22 +99,49 @@ export function ServerCard({ server, compact = false }: Props) {
           )}
         </div>
 
+        {/* Bottom: current map name */}
+        {!server.comingSoon && mapName && (
+          <div className="absolute inset-x-0 bottom-0 p-3 z-10">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold drop-shadow">
+              Mapa atual
+            </p>
+            <p className="font-display text-xl font-bold text-foreground leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              {mapName}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Info area */}
+      <div className="relative z-10 p-5 flex flex-col gap-4 flex-1">
+        <h3 className="font-display text-xl font-bold leading-tight">
+          {server.name}
+        </h3>
+
         {!compact && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {server.description}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="h-4 w-4 text-accent" />
-            <span className="font-mono text-foreground">{playersTxt}</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              <Users className="h-3.5 w-3.5 text-accent" />
+              Jogadores
+            </div>
+            <p className="font-display text-xl font-bold text-foreground mt-1 tabular-nums">
+              {playersTxt}
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground min-w-0">
-            <MapPin className="h-4 w-4 text-accent shrink-0" />
-            <span className="font-mono text-foreground truncate">
+          <div className="rounded-lg border border-border bg-secondary/40 p-3 min-w-0">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              <MapPin className="h-3.5 w-3.5 text-accent" />
+              Mapa
+            </div>
+            <p className="font-display text-xl font-bold text-foreground mt-1 truncate">
               {server.comingSoon ? "—" : mapName ?? "—"}
-            </span>
+            </p>
           </div>
         </div>
 
@@ -148,12 +171,12 @@ export function ServerCard({ server, compact = false }: Props) {
             params={{ slug: server.slug }}
             className="flex-1 px-3 py-2 text-sm font-semibold uppercase tracking-wider rounded-md border border-border hover:bg-secondary text-center transition"
           >
-            Ver detalhes
+            Detalhes
           </Link>
           {!server.comingSoon && (
             <a
               href={steamConnectUrl(server)}
-              className="flex-1 px-3 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center hover:opacity-90 transition"
+              className="flex-1 px-3 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center hover:opacity-90 transition shadow-glow"
             >
               Conectar
             </a>
