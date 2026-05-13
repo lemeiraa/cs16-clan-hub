@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Users, MapPin, Activity, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   type ServerInfo,
@@ -41,7 +41,9 @@ export function ServerCard({ server, compact = false }: Props) {
       : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`;
 
   const mapName = !server.comingSoon ? status?.map ?? null : null;
-  const mapImg = mapName
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => { setImgFailed(false); }, [mapName]);
+  const mapImg = mapName && !imgFailed
     ? `https://image.gametracker.com/images/maps/160x120/${mapName}.jpg`
     : null;
 
@@ -55,15 +57,21 @@ export function ServerCard({ server, compact = false }: Props) {
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-brand z-30" />
 
       {/* Map banner */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-secondary/40">
-        {mapImg ? (
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-cover bg-center scale-105 group-hover:scale-110 transition-transform duration-500"
-            style={{ backgroundImage: `url(${mapImg})` }}
+      <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-secondary via-card to-secondary/40">
+        {mapImg && (
+          <img
+            src={mapImg}
+            alt={mapName ?? ""}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-500"
           />
-        ) : (
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-secondary to-card" />
+        )}
+        {!mapImg && (
+          <div aria-hidden className="absolute inset-0 flex items-center justify-center">
+            <MapPin className="h-12 w-12 text-accent/20" />
+          </div>
         )}
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-card/10" />
 
