@@ -47,77 +47,47 @@ function stripTags(s: string): string {
   return decodeEntities(s.replace(/<[^>]+>/g, "")).trim();
 }
 
-function parsePlayersRow(html: string): { current: number; max: number } {
-  // ex.: "5/32"
-  const m = html.match(/(\d+)\s*\/\s*(\d+)/);
-  if (!m) return { current: 0, max: 0 };
-  return { current: parseInt(m[1], 10), max: parseInt(m[2], 10) };
-}
-
-function parseLivePlayers(html: string): LivePlayer[] {
-  // table.table_lst_spec contains rows with name / score / time
-  const tableMatch = html.match(
-    /<table[^>]*class="[^"]*table_lst_spec[^"]*"[^>]*>([\s\S]*?)<\/table>/i,
-  );
-  if (!tableMatch) return [];
-  const rows = [...tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
-  const players: LivePlayer[] = [];
-  for (const row of rows) {
-    const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(
-      (c) => stripTags(c[1]),
-    );
-    if (cells.length < 3) continue;
-    // typical layout: [#, name, score, time]
-    const name = cells.find((c) => c && !/^\d+$/.test(c) && !/^\d+:/.test(c));
-    if (!name) continue;
-    const numbers = cells.filter((c) => /^\d+$/.test(c)).map(Number);
-    const time = cells.find((c) => /^\d+:\d+/.test(c));
-    let timeMinutes = 0;
-    if (time) {
-      const [h, m] = time.split(":").map(Number);
-      timeMinutes = (h || 0) * 60 + (m || 0);
-    }
-    const score = numbers.length ? numbers[numbers.length - 1] : 0;
-    players.push({ name, score, timeMinutes });
+function parsePlayersCount(html: string): { current: number; max: number } {
+  const cur = html.match(/id="HTML_num_players"[^>]*>\s*(\d+)/i);
+  const max = html.match(/id="HTML_max_players"[^>]*>\s*(\d+)/i);
+  if (cur && max) {
+    return { current: parseInt(cur[1], 10), max: parseInt(max[1], 10) };
   }
-  return players;
+  const fb = html.match(/(\d+)\s*\/\s*(\d+)/);
+  if (fb) return { current: parseInt(fb[1], 10), max: parseInt(fb[2], 10) };
+  return { current: 0, max: 0 };
 }
 
 function parseMap(html: string): string | null {
-  // Try og:image map name pattern, then fall back to "Current Map"
-  const m1 = html.match(
-    /Current Map[^<]*<\/[^>]+>\s*<[^>]*>([\s\S]{0,80}?)</i,
-  );
-  if (m1) {
-    const v = stripTags(m1[1]);
+  const m = html.match(/id="HTML_curr_map"[^>]*>\s*([^<]+?)\s*</i);
+  if (m) {
+    const v = stripTags(m[1]);
     if (v) return v;
   }
-  const m2 = html.match(
-    /map[s]?\s*\/\s*([a-z0-9_\-]+)\.(?:jpg|png|gif)/i,
-  );
-  if (m2) return m2[1];
-  const m3 = html.match(/<a[^>]+href="\/map_info\/[^"]+"[^>]*>([^<]+)</i);
-  if (m3) return stripTags(m3[1]);
+  const m2 = html.match(/<a[^>]+href="\/map_info\/[^"]+"[^>]*>([^<]+)</i);
+  if (m2) return stripTags(m2[1]);
   return null;
 }
 
-function parsePlayersCount(html: string): { current: number; max: number } {
-  // Look for "Players" label followed by "X/Y"
-  const m = html.match(/Players[^<]*<\/[^>]+>[\s\S]{0,200}?(\d+)\s*\/\s*(\d+)/i);
-  if (m) return { current: parseInt(m[1], 10), max: parseInt(m[2], 10) };
-  // fallback any "X/Y" near "Status"
-  return parsePlayersRow(html);
-}
-
 function parseStatusOnline(html: string): boolean {
-  // "Status" cell with Online/Offline image alt
-  if (/alt="Online"/i.test(html)) return true;
-  if (/alt="Offline"/i.test(html)) return false;
-  // fallback: any current players > 0 implies online
-  return /Players[^<]*<\/[^>]+>[\s\S]{0,200}?\d+\s*\/\s*\d+/i.test(html);
+  // GameTracker uses item_color_success with "Alive" / "Online"
+  const m = html.match(
+    /Status:[\s\S]{0,200}?<span class="item_color_(success|failure|fail)"[^>]*>\s*([^<]+?)\s*</i,
+  );
+  if (m) {
+    const cls = m[1].toLowerCase();
+    const txt = m[2].toLowerCase();
+    if (cls === "success") return true;
+    if (txt.includes("alive") || txt.includes("online")) return true;
+    return false;
+  }
+  // Fallback: assume online if there are players
+  const pc = html.match(/id="HTML_num_players"[^>]*>\s*(\d+)/i);
+  if (pc && parseInt(pc[1], 10) > 0) return true;
+  return false;
 }
 
-function parseTopPlayers(html: string): TopPlayer[] {
+function parseRankingTable(html: string): TopPlayer[] {
   const tableMatch = html.match(
     /<table[^>]*class="[^"]*table_lst[^"]*"[^>]*>([\s\S]*?)<\/table>/i,
   );
@@ -128,18 +98,24 @@ function parseTopPlayers(html: string): TopPlayer[] {
     const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(
       (c) => stripTags(c[1]),
     );
-    if (cells.length < 3) continue;
-    const rank = parseInt(cells[0], 10);
+    if (cells.length < 4) continue;
+    // Skip header row (col_h cells contain "Rank", "Name", etc.)
+    if (/Rank/i.test(cells[0]) && /Name/i.test(cells[1])) continue;
+    const rank = parseInt(cells[0].replace(/\D/g, ""), 10);
     if (Number.isNaN(rank)) continue;
     const name = cells[1];
     if (!name) continue;
-    // Find score and time among remaining cells
-    const nums = cells
-      .slice(2)
-      .map((c) => ({ raw: c, n: parseFloat(c.replace(",", ".")) }))
-      .filter((x) => !Number.isNaN(x.n));
-    const score = nums[0]?.n ?? 0;
-    const timeHours = nums[1]?.n ?? 0;
+    const score = parseFloat(cells[2].replace(/[^\d.,-]/g, "").replace(",", ".")) || 0;
+    // time like "12h 34m" or "12.5"
+    const timeRaw = cells[3];
+    let timeHours = 0;
+    const hm = timeRaw.match(/(\d+)\s*h(?:\s*(\d+)\s*m)?/i);
+    if (hm) {
+      timeHours = parseInt(hm[1], 10) + (hm[2] ? parseInt(hm[2], 10) / 60 : 0);
+    } else {
+      const n = parseFloat(timeRaw.replace(",", "."));
+      if (!Number.isNaN(n)) timeHours = n;
+    }
     out.push({ rank, name, score, timeHours });
     if (out.length >= 50) break;
   }
