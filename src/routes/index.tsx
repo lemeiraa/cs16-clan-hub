@@ -176,7 +176,34 @@ function Index() {
   );
 }
 
-type NewsItem = {
+function PlayersCounter() {
+  const fetchAll = useServerFn(getAllServersStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["servers-status-all"],
+    queryFn: () => fetchAll(),
+    refetchInterval: 30_000,
+    staleTime: 25_000,
+  });
+  const total = (data ?? []).reduce((acc, s) => acc + (s.online ? s.players : 0), 0);
+  const max = (data ?? []).reduce((acc, s) => acc + (s.maxPlayers || 0), 0);
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-card/60 backdrop-blur-sm">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 animate-ping" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+      </span>
+      <Users className="h-4 w-4 text-accent" />
+      <span className="text-sm font-semibold tabular-nums">
+        {isLoading ? "…" : `${total}${max ? `/${max}` : ""}`}
+      </span>
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+        jogadores online
+      </span>
+    </div>
+  );
+}
+
+
   id: string;
   title: string;
   excerpt: string;
