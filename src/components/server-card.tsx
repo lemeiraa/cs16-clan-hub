@@ -40,6 +40,11 @@ export function ServerCard({ server, compact = false }: Props) {
       ? "..."
       : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`;
 
+  const mapName = !server.comingSoon ? status?.map ?? null : null;
+  const mapImg = mapName
+    ? `https://image.gametracker.com/images/maps/160x120/${mapName}.jpg`
+    : null;
+
   return (
     <div
       className={cn(
@@ -47,8 +52,21 @@ export function ServerCard({ server, compact = false }: Props) {
         "transition hover:border-accent/60 hover:-translate-y-0.5",
       )}
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-brand" />
-      <div className="p-5 flex flex-col gap-4">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-brand z-20" />
+      {mapImg && (
+        <>
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity"
+            style={{ backgroundImage: `url(${mapImg})` }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-b from-card/70 via-card/85 to-card"
+          />
+        </>
+      )}
+      <div className="relative z-10 p-5 flex flex-col gap-4 [&_h3]:drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] [&_code]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
