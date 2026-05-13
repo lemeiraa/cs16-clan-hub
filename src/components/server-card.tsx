@@ -42,6 +42,7 @@ export function ServerCard({ server, compact = false }: Props) {
 
   const mapName = !server.comingSoon ? status?.map ?? null : null;
   const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => { setImgFailed(false); }, [mapName]);
   const mapImg = mapName && !imgFailed
     ? `https://image.gametracker.com/images/maps/160x120/${mapName}.jpg`
     : null;
