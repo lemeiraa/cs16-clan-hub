@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ServerCard } from "@/components/server-card";
 import { fetchServers } from "@/lib/servers-db";
+import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, Pin, X } from "lucide-react";
+import { Newspaper, Pin, X, Users } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
