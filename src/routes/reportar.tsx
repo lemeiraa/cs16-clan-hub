@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, Upload, Loader2 } from "lucide-react";
+import { AlertTriangle, Upload, Loader2, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/reportar")({
   component: ReportarPage,
@@ -17,6 +17,9 @@ export const Route = createFileRoute("/reportar")({
 type WaAdmin = { id: string; name: string; phone: string };
 
 function ReportarPage() {
+  const navigate = useNavigate();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [admins, setAdmins] = useState<WaAdmin[]>([]);
   const [form, setForm] = useState({
     name: "",
@@ -29,13 +32,29 @@ function ReportarPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setAuthed(!!data.session);
+      setAuthChecked(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setAuthed(!!session);
+      setAuthChecked(true);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (!authed) return;
     supabase
       .from("whatsapp_admins")
       .select("id,name,phone")
       .eq("active", true)
       .order("sort_order")
       .then(({ data }) => setAdmins(data ?? []));
-  }, []);
+  }, [authed]);
+
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
