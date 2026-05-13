@@ -56,6 +56,7 @@ export function ServerCard({ server, compact = false }: Props) {
     const m = mapName.match(/^([a-z]+_[a-z0-9]+)/i);
     if (m && m[1] !== mapName) variants.add(m[1]);
     const sources = (name: string) => [
+      `https://image.gametracker.com/images/maps/160x120/cs/${name}.jpg`,
       `https://image.gametracker.com/images/maps/160x120/${name}.jpg`,
       `https://image.gametracker.com/images/maps/320x240/${name}.jpg`,
     ];
