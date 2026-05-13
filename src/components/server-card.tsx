@@ -41,7 +41,8 @@ export function ServerCard({ server, compact = false }: Props) {
       : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`;
 
   const mapName = !server.comingSoon ? status?.map ?? null : null;
-  const mapImg = mapName
+  const [imgFailed, setImgFailed] = useState(false);
+  const mapImg = mapName && !imgFailed
     ? `https://image.gametracker.com/images/maps/160x120/${mapName}.jpg`
     : null;
 
