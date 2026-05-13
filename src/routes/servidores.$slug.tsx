@@ -114,27 +114,41 @@ function ServerDetail() {
       </header>
 
       {!srv.comingSoon && (
-        <div className="grid gap-4 sm:grid-cols-3 mt-8">
-          <StatCard
-            label="Status"
-            value={status?.online ? "Online" : isLoading ? "..." : "Offline"}
-            tone={status?.online ? "success" : "destructive"}
-          />
-          <StatCard
-            icon={<Users className="h-5 w-5" />}
-            label="Jogadores"
-            value={
-              isLoading
-                ? "..."
-                : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`
-            }
-          />
-          <StatCard
-            icon={<MapPin className="h-5 w-5" />}
-            label="Mapa"
-            value={isLoading ? "..." : status?.map ?? "—"}
-          />
-        </div>
+        <>
+          <div className="mt-8 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="relative inline-flex h-2 w-2">
+                <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", isFetching ? "animate-ping bg-success" : "bg-success/60")} />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+              <span className="uppercase tracking-wider font-semibold">Ao vivo</span>
+              {dataUpdatedAt > 0 && (
+                <span>· atualizado {new Date(dataUpdatedAt).toLocaleTimeString("pt-BR")}</span>
+              )}
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3 mt-3">
+            <StatCard
+              label="Status"
+              value={status?.online ? "Online" : isLoading ? "..." : "Offline"}
+              tone={status?.online ? "success" : "destructive"}
+            />
+            <StatCard
+              icon={<Users className="h-5 w-5" />}
+              label="Jogadores"
+              value={
+                isLoading
+                  ? "..."
+                  : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`
+              }
+            />
+            <StatCard
+              icon={<MapPin className="h-5 w-5" />}
+              label="Mapa"
+              value={isLoading ? "..." : status?.map ?? "—"}
+            />
+          </div>
+        </>
       )}
 
       <div className="mt-10 border-b border-border flex flex-wrap gap-1">
