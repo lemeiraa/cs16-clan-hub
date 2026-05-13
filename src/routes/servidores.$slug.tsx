@@ -275,28 +275,64 @@ function RankingTable({
         Ranking não disponível no momento.
       </p>
     );
+  const rankStyle = (rank: number) => {
+    if (rank === 1)
+      return {
+        row: "bg-[oklch(0.85_0.15_85_/_0.12)] hover:bg-[oklch(0.85_0.15_85_/_0.18)]",
+        badge: "bg-gradient-to-br from-[#FFD700] to-[#B8860B] text-black shadow-[0_0_12px_oklch(0.85_0.18_85_/_0.5)]",
+        name: "text-[#FFD700] font-bold",
+        medal: "🥇",
+      };
+    if (rank === 2)
+      return {
+        row: "bg-[oklch(0.8_0.02_250_/_0.1)] hover:bg-[oklch(0.8_0.02_250_/_0.16)]",
+        badge: "bg-gradient-to-br from-[#E8E8E8] to-[#A8A8A8] text-black shadow-[0_0_10px_oklch(0.85_0.02_250_/_0.4)]",
+        name: "text-[#D8D8D8] font-bold",
+        medal: "🥈",
+      };
+    if (rank === 3)
+      return {
+        row: "bg-[oklch(0.55_0.13_50_/_0.12)] hover:bg-[oklch(0.55_0.13_50_/_0.18)]",
+        badge: "bg-gradient-to-br from-[#CD7F32] to-[#7B4A1E] text-black shadow-[0_0_10px_oklch(0.6_0.15_50_/_0.4)]",
+        name: "text-[#E08850] font-bold",
+        medal: "🥉",
+      };
+    return { row: "", badge: "", name: "", medal: "" };
+  };
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full text-sm">
         <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
           <tr>
-            <th className="px-4 py-2 text-left w-16">#</th>
+            <th className="px-4 py-2 text-left w-20">#</th>
             <th className="px-4 py-2 text-left">Jogador</th>
             <th className="px-4 py-2 text-right">Pontuação</th>
             <th className="px-4 py-2 text-right">Horas</th>
           </tr>
         </thead>
         <tbody>
-          {players.map((p) => (
-            <tr key={p.rank} className="border-t border-border">
-              <td className="px-4 py-2 font-mono text-accent">#{p.rank}</td>
-              <td className="px-4 py-2 font-mono">{p.name}</td>
-              <td className="px-4 py-2 text-right font-mono">{p.score}</td>
-              <td className="px-4 py-2 text-right text-muted-foreground">
-                {p.timeHours}
-              </td>
-            </tr>
-          ))}
+          {players.map((p) => {
+            const s = rankStyle(p.rank);
+            const isPodium = p.rank <= 3;
+            return (
+              <tr key={p.rank} className={cn("border-t border-border transition", s.row)}>
+                <td className="px-4 py-2">
+                  {isPodium ? (
+                    <span className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-md font-mono font-bold text-xs", s.badge)}>
+                      <span>{s.medal}</span> #{p.rank}
+                    </span>
+                  ) : (
+                    <span className="font-mono text-muted-foreground">#{p.rank}</span>
+                  )}
+                </td>
+                <td className={cn("px-4 py-2 font-mono", isPodium ? s.name : "")}>{p.name}</td>
+                <td className={cn("px-4 py-2 text-right font-mono", isPodium && "font-bold")}>{p.score}</td>
+                <td className="px-4 py-2 text-right text-muted-foreground">
+                  {p.timeHours.toFixed(1)}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
