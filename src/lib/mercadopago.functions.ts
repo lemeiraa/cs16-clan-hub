@@ -2,14 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createPixPayment, getPayment } from "./mercadopago.server";
-import {
-  AMMO_PACK_MAX,
-  AMMO_PACK_MIN,
-  AMMO_PACK_PRICE_PER_1000,
-  AMMO_PACK_STEP,
-  PLANS_PRICES,
-  SERVERS,
-} from "./servers";
 
 const baseSchema = z.object({
   nick: z.string().min(1).max(64),
@@ -21,12 +13,12 @@ const baseSchema = z.object({
 
 const planSchema = baseSchema.extend({
   product_type: z.literal("plan"),
-  plan_tier: z.enum(["vip", "admin", "master", "supremo"]),
+  plan_tier: z.string().min(1).max(32),
 });
 
 const ammoSchema = baseSchema.extend({
   product_type: z.literal("ammo_packs"),
-  ammo_packs: z.number().int().min(AMMO_PACK_MIN).max(AMMO_PACK_MAX),
+  ammo_packs: z.number().int().min(1).max(10_000_000),
 });
 
 const inputSchema = z.discriminatedUnion("product_type", [planSchema, ammoSchema]);
@@ -35,8 +27,17 @@ export const createPixOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => inputSchema.parse(input))
   .handler(async ({ data }) => {
     // Validate server exists and is not coming soon
-    const srv = SERVERS.find((s) => s.slug === data.server_slug && !s.comingSoon);
-    if (!srv) throw new Error("Servidor inválido");
+    const { data: srv } = await supabaseAdmin
+      .from("servers")
+      .select("slug, short, coming_soon")
+      .eq("slug", data.server_slug)
+      .maybeSingle();
+    if (!srv || srv.coming_soon) throw new Error("Servidor inválido");
+
+    // Check PIX is enabled
+    const { data: pixMethod } = await supabaseAdmin
+      .from("payment_methods").select("enabled").eq("id", "pix").maybeSingle();
+    if (!pixMethod?.enabled) throw new Error("Pagamento via PIX está desativado");
 
     let amount: number;
     let description: string;
@@ -44,25 +45,28 @@ export const createPixOrder = createServerFn({ method: "POST" })
     let planTier: string | null = null;
 
     if (data.product_type === "plan") {
-      amount = PLANS_PRICES[data.plan_tier];
-      planTier = data.plan_tier;
-      description = `Cargo ${data.plan_tier.toUpperCase()} - ${srv.short} (${data.nick})`;
+      const { data: plan } = await supabaseAdmin
+        .from("plans").select("tier, label, price_brl, active").eq("tier", data.plan_tier).maybeSingle();
+      if (!plan || !plan.active) throw new Error("Cargo inválido ou inativo");
+      amount = Number(plan.price_brl);
+      planTier = plan.tier;
+      description = `Cargo ${plan.label} - ${srv.short} (${data.nick})`;
     } else {
-      // recompute server-side to prevent tampering
-      const qty =
-        Math.round(data.ammo_packs / AMMO_PACK_STEP) * AMMO_PACK_STEP;
-      if (qty < AMMO_PACK_MIN || qty > AMMO_PACK_MAX) {
+      const { data: ammo } = await supabaseAdmin
+        .from("ammo_settings").select("*").eq("id", 1).single();
+      if (!ammo) throw new Error("Configuração de Ammo Packs indisponível");
+      const qty = Math.round(data.ammo_packs / ammo.step_qty) * ammo.step_qty;
+      if (qty < ammo.min_qty || qty > ammo.max_qty) {
         throw new Error("Quantidade de Ammo Packs inválida");
       }
-      if (srv.slug !== "zombie-plague-brasil" && srv.slug !== "zombie-plague-venezuela") {
-        throw new Error("Ammo Packs disponíveis apenas em servidores Zombie Plague");
+      if (ammo.forced_server_slug && srv.slug !== ammo.forced_server_slug) {
+        // allow zombie-plague-* servers as default if no forced
       }
       ammoPacks = qty;
-      amount = (qty / 1000) * AMMO_PACK_PRICE_PER_1000;
+      amount = (qty / 1000) * Number(ammo.price_per_1000);
       description = `${qty.toLocaleString("pt-BR")} Ammo Packs - ${srv.short} (${data.nick})`;
     }
 
-    // Insert order (admin client bypasses RLS — we already validated input)
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -83,7 +87,6 @@ export const createPixOrder = createServerFn({ method: "POST" })
 
     if (error || !order) throw new Error(error?.message ?? "Falha ao criar pedido");
 
-    // Build webhook URL (public route)
     const origin =
       process.env.PUBLIC_BASE_URL ||
       `https://project--${process.env.LOVABLE_PROJECT_ID || "3193e7e7-c2ec-4d95-8650-b70a5001cc95"}.lovable.app`;
@@ -99,7 +102,6 @@ export const createPixOrder = createServerFn({ method: "POST" })
         notificationUrl: `${origin}/api/public/mp-webhook`,
       });
     } catch (err) {
-      // mark order failed so we don't leave dangling pendings without PIX
       await supabaseAdmin
         .from("orders")
         .update({ status: "cancelled", notes: `MP error: ${(err as Error).message}` })
