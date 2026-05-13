@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SERVERS } from "@/lib/servers";
+import { useQuery } from "@tanstack/react-query";
 import { ServerCard } from "@/components/server-card";
+import { fetchServers } from "@/lib/servers-db";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -11,13 +12,20 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "7 servidores 24/7 de Counter-Strike 1.6: 4Fun, Fy Pool Day, Zombie Plague, Pregame e mais. Conecte-se agora.",
+          "Servidores 24/7 de Counter-Strike 1.6: 4Fun, Fy Pool Day, Zombie Plague, Pregame e mais. Conecte-se agora.",
       },
     ],
   }),
 });
 
 function Index() {
+  const { data: servers = [] } = useQuery({
+    queryKey: ["servers"],
+    queryFn: fetchServers,
+    staleTime: 30_000,
+  });
+  const activeCount = servers.filter((s) => !s.comingSoon).length;
+
   return (
     <>
       <section
@@ -36,9 +44,8 @@ function Index() {
             <span className="text-gradient">CS NOSTALGIA</span>
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-            Reviva o clássico. {SERVERS.filter((s) => !s.comingSoon).length}{" "}
-            servidores ativos, comunidade unida, gameplay nostálgico do CS 1.6
-            como deve ser.
+            Reviva o clássico. {activeCount} servidores ativos, comunidade
+            unida, gameplay nostálgico do CS 1.6 como deve ser.
           </p>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
             <Link
@@ -75,7 +82,7 @@ function Index() {
           </Link>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {SERVERS.map((s) => (
+          {servers.map((s) => (
             <ServerCard key={s.slug} server={s} />
           ))}
         </div>
