@@ -36,10 +36,12 @@ function ServerDetail() {
   );
   const [copied, setCopied] = useState(false);
 
-  const { data: status, isLoading } = useQuery({
+  const { data: status, isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ["server-status", slug],
     queryFn: () => fetchStatus({ data: { slug } }),
-    refetchInterval: server?.comingSoon ? false : 30_000,
+    refetchInterval: server?.comingSoon ? false : 15_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
     enabled: !!server && !server.comingSoon,
   });
 
