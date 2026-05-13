@@ -140,8 +140,8 @@ function parseLivePlayers(html: string): LivePlayer[] {
   const t = tables.find(
     (tbl) =>
       /Name/i.test(tbl.headers.join(" ")) &&
-      /Time/i.test(tbl.headers.join(" ")) &&
-      !/Rank/i.test(tbl.headers.join(" ")),
+      /Score/i.test(tbl.headers.join(" ")) &&
+      /Time/i.test(tbl.headers.join(" ")),
   );
   if (!t) return [];
   const nameIdx = Math.max(0, t.headers.findIndex((h) => /Name/i.test(h)));
@@ -154,11 +154,23 @@ function parseLivePlayers(html: string): LivePlayer[] {
     const scoreStr = cells[scoreIdx >= 0 ? scoreIdx : 1] ?? "";
     const timeStr = cells[timeIdx >= 0 ? timeIdx : 2] ?? "";
     const score = parseFloat(scoreStr.replace(/[^\d.,-]/g, "").replace(",", ".")) || 0;
-    const timeMinutes = Math.round(parseTimeToHours(timeStr) * 60);
+    const timeMinutes = parseLiveTimeToMinutes(timeStr);
     out.push({ name, score, timeMinutes });
     if (out.length >= 64) break;
   }
   return out;
+}
+
+function parseLiveTimeToMinutes(raw: string): number {
+  const clean = raw.trim();
+  const clock = clean.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+  if (clock) {
+    const first = parseInt(clock[1], 10);
+    const second = parseInt(clock[2], 10);
+    const third = clock[3] ? parseInt(clock[3], 10) : 0;
+    return clock[3] ? first * 60 + second + Math.round(third / 60) : first + Math.round(second / 60);
+  }
+  return Math.round(parseTimeToHours(clean) * 60);
 }
 
 async function fetchWithTimeout(url: string, ms: number): Promise<string> {
