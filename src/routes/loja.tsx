@@ -30,6 +30,17 @@ type WaAdmin = { id: string; name: string; phone: string; display: string };
 type AmmoCfg = { price_per_1000: number; min_qty: number; max_qty: number; step_qty: number; forced_server_slug: string | null };
 type PaymentMethods = { pix: boolean; whatsapp: boolean };
 
+const SHOP_TIMEOUT_MS = 12000;
+
+async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => reject(new Error(`${label} demorou demais para responder.`)), SHOP_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 function LojaPage() {
   const [tab, setTab] = useState<"plans" | "ammo">("plans");
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -38,28 +49,50 @@ function LojaPage() {
   const [ammo, setAmmo] = useState<AmmoCfg | null>(null);
   const [methods, setMethods] = useState<PaymentMethods>({ pix: true, whatsapp: true });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const [p, s, w, a, m] = await Promise.all([
-        supabase.from("plans").select("*").eq("active", true).order("sort_order"),
-        supabase.from("servers").select("slug,name,short").eq("coming_soon", false).order("sort_order"),
-        supabase.from("whatsapp_admins").select("*").eq("active", true).order("sort_order"),
-        supabase.from("ammo_settings").select("*").eq("id", 1).single(),
-        supabase.from("payment_methods").select("*"),
-      ]);
-      setPlans((p.data ?? []) as any);
-      setServers((s.data ?? []) as any);
-      setWaAdmins((w.data ?? []) as any);
-      setAmmo((a.data ?? null) as any);
-      const mm: PaymentMethods = { pix: true, whatsapp: true };
-      (m.data ?? []).forEach((x: any) => { (mm as any)[x.id] = x.enabled; });
-      setMethods(mm);
-      setLoading(false);
+      try {
+        const [p, s, w, a, m] = await withTimeout(Promise.all([
+          supabase.from("plans").select("*").eq("active", true).order("sort_order"),
+          supabase.from("servers").select("slug,name,short").eq("coming_soon", false).order("sort_order"),
+          supabase.from("whatsapp_admins").select("*").eq("active", true).order("sort_order"),
+          supabase.from("ammo_settings").select("*").eq("id", 1).single(),
+          supabase.from("payment_methods").select("*"),
+        ]), "Loja");
+        const error = p.error ?? s.error ?? w.error ?? a.error ?? m.error;
+        if (error) throw error;
+        setPlans((p.data ?? []) as any);
+        setServers((s.data ?? []) as any);
+        setWaAdmins((w.data ?? []) as any);
+        setAmmo((a.data ?? null) as any);
+        const mm: PaymentMethods = { pix: true, whatsapp: true };
+        (m.data ?? []).forEach((x: any) => { (mm as any)[x.id] = x.enabled; });
+        setMethods(mm);
+        setLoadError(null);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Não foi possível carregar a loja.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
   if (loading) return <div className="container mx-auto px-4 py-12">Carregando...</div>;
+  if (loadError) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-5">
+          <h1 className="font-display text-2xl font-bold">Loja temporariamente indisponível</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+          <button onClick={() => window.location.reload()} className="mt-4 rounded-md bg-gradient-brand px-4 py-2 text-sm font-bold uppercase tracking-wider text-brand-foreground">
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section className="container mx-auto px-4 py-12">
