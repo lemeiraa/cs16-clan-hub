@@ -79,12 +79,15 @@ function Index() {
               Nossos Servidores
             </h2>
           </div>
-          <Link
-            to="/servidores"
-            className="text-sm uppercase tracking-wider text-muted-foreground hover:text-accent transition"
-          >
-            Ver todos →
-          </Link>
+          <div className="flex items-center gap-4 flex-wrap">
+            <PlayersCounter />
+            <Link
+              to="/servidores"
+              className="text-sm uppercase tracking-wider text-muted-foreground hover:text-accent transition"
+            >
+              Ver todos →
+            </Link>
+          </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {servers.map((s) => (
