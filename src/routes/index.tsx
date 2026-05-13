@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ServerCard } from "@/components/server-card";
 import { fetchServers } from "@/lib/servers-db";
+import { supabase } from "@/integrations/supabase/client";
+import { Newspaper, Pin, X } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
