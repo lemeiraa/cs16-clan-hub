@@ -303,7 +303,7 @@ function RankingTable({
   );
 }
 
-function CommandsList({ server }: { server: ReturnType<typeof getServerBySlug> }) {
+function CommandsList({ server }: { server: ServerInfo }) {
   if (!server?.commands?.length)
     return <p className="text-muted-foreground">Sem comandos cadastrados.</p>;
   return (
@@ -321,7 +321,7 @@ function CommandsList({ server }: { server: ReturnType<typeof getServerBySlug> }
   );
 }
 
-function RulesList({ server }: { server: ReturnType<typeof getServerBySlug> }) {
+function RulesList({ server }: { server: ServerInfo }) {
   if (!server?.rules?.length)
     return <p className="text-muted-foreground">Sem regras cadastradas.</p>;
   return (
