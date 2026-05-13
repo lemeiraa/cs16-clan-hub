@@ -78,7 +78,7 @@ const PLAN_INFO: Record<
 
 const SERVER_OPTIONS = SERVERS.filter((s) => !s.comingSoon);
 
-export default function LojaPage() {
+function LojaPage() {
   const [tab, setTab] = useState<"plans" | "ammo">("plans");
   return (
     <section className="container mx-auto px-4 py-12">
@@ -433,13 +433,3 @@ function Field({
   );
 }
 
-// Re-export so route uses default
-function LojaPage() {
-  return <DefaultExport />;
-}
-const DefaultExport = exports_default();
-function exports_default() {
-  return function () {
-    return null as unknown as JSX.Element;
-  } as unknown as () => JSX.Element;
-}
