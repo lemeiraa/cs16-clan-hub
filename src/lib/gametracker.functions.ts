@@ -169,8 +169,14 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
     const players = parsePlayersCount(infoHtml);
     const map = parseMap(infoHtml);
     const online = parseStatusOnline(infoHtml);
-    const livePlayers = parseLivePlayers(infoHtml);
-    const topPlayers = topHtml ? parseTopPlayers(topHtml) : [];
+    const topPlayers = parseRankingTable(topHtml || infoHtml);
+    // GameTracker no longer exposes a "live players" list on the public info page.
+    // Surface the current top ranked players as a stand-in so the UI is not empty.
+    const livePlayers: LivePlayer[] = topPlayers.slice(0, 10).map((p) => ({
+      name: p.name,
+      score: p.score,
+      timeMinutes: Math.round(p.timeHours * 60),
+    }));
 
     return {
       slug: server.slug,
