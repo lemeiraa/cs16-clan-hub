@@ -238,7 +238,7 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 
 // In-memory cache (per worker instance) ~ 60s
 const cache = new Map<string, { at: number; data: ServerStatus }>();
-const TTL_MS = 60_000;
+const TTL_MS = 20_000;
 
 export const getServerStatus = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) => input)
