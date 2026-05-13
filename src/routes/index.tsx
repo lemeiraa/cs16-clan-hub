@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ServerCard } from "@/components/server-card";
 import { fetchServers } from "@/lib/servers-db";
+import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, Pin, X } from "lucide-react";
+import { Newspaper, Pin, X, Users } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -77,12 +79,15 @@ function Index() {
               Nossos Servidores
             </h2>
           </div>
-          <Link
-            to="/servidores"
-            className="text-sm uppercase tracking-wider text-muted-foreground hover:text-accent transition"
-          >
-            Ver todos →
-          </Link>
+          <div className="flex items-center gap-4 flex-wrap">
+            <PlayersCounter />
+            <Link
+              to="/servidores"
+              className="text-sm uppercase tracking-wider text-muted-foreground hover:text-accent transition"
+            >
+              Ver todos →
+            </Link>
+          </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {servers.map((s) => (
@@ -168,6 +173,33 @@ function Index() {
 
       <NewsSection />
     </>
+  );
+}
+
+function PlayersCounter() {
+  const fetchAll = useServerFn(getAllServersStatus);
+  const { data, isLoading } = useQuery({
+    queryKey: ["servers-status-all"],
+    queryFn: () => fetchAll(),
+    refetchInterval: 30_000,
+    staleTime: 25_000,
+  });
+  const total = (data ?? []).reduce((acc, s) => acc + (s.online ? s.players : 0), 0);
+  const max = (data ?? []).reduce((acc, s) => acc + (s.maxPlayers || 0), 0);
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-card/60 backdrop-blur-sm">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 animate-ping" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+      </span>
+      <Users className="h-4 w-4 text-accent" />
+      <span className="text-sm font-semibold tabular-nums">
+        {isLoading ? "…" : `${total}${max ? `/${max}` : ""}`}
+      </span>
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+        jogadores online
+      </span>
+    </div>
   );
 }
 
