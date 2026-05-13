@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import logo from "@/assets/logo-csnostalgia.jpg";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -12,7 +13,19 @@ const NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    const check = async (uid: string | undefined) => {
+      if (!uid) { setIsAdmin(false); return; }
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
+      setIsAdmin(!!data);
+    };
+    supabase.auth.getUser().then(({ data }) => check(data.user?.id));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => check(session?.user?.id));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -52,6 +65,11 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link to="/admin" className="ml-2 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border border-accent text-accent hover:bg-accent/10 transition inline-flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5" /> Admin
+            </Link>
+          )}
           <Link
             to="/auth"
             className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ammo_settings: {
+        Row: {
+          forced_server_slug: string | null
+          id: number
+          max_qty: number
+          min_qty: number
+          price_per_1000: number
+          step_qty: number
+          updated_at: string
+        }
+        Insert: {
+          forced_server_slug?: string | null
+          id?: number
+          max_qty?: number
+          min_qty?: number
+          price_per_1000?: number
+          step_qty?: number
+          updated_at?: string
+        }
+        Update: {
+          forced_server_slug?: string | null
+          id?: number
+          max_qty?: number
+          min_qty?: number
+          price_per_1000?: number
+          step_qty?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           ammo_packs: number | null
@@ -77,24 +107,144 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          description: string | null
+          enabled: boolean
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          enabled?: boolean
+          id: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          highlight: boolean
+          id: string
+          label: string
+          perks: Json
+          price_brl: number
+          sort_order: number
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          highlight?: boolean
+          id?: string
+          label: string
+          perks?: Json
+          price_brl: number
+          sort_order?: number
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          highlight?: boolean
+          id?: string
+          label?: string
+          perks?: Json
+          price_brl?: number
+          sort_order?: number
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          banned: boolean
           created_at: string
           email: string | null
           id: string
           nick: string | null
         }
         Insert: {
+          banned?: boolean
           created_at?: string
           email?: string | null
           id: string
           nick?: string | null
         }
         Update: {
+          banned?: boolean
           created_at?: string
           email?: string | null
           id?: string
           nick?: string | null
+        }
+        Relationships: []
+      }
+      servers: {
+        Row: {
+          coming_soon: boolean
+          commands: Json
+          country: string
+          created_at: string
+          description: string
+          flag: string
+          ip: string
+          mode: string
+          name: string
+          port: number
+          rules: Json
+          short: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          coming_soon?: boolean
+          commands?: Json
+          country?: string
+          created_at?: string
+          description?: string
+          flag?: string
+          ip?: string
+          mode?: string
+          name: string
+          port?: number
+          rules?: Json
+          short: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          coming_soon?: boolean
+          commands?: Json
+          country?: string
+          created_at?: string
+          description?: string
+          flag?: string
+          ip?: string
+          mode?: string
+          name?: string
+          port?: number
+          rules?: Json
+          short?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -116,6 +266,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_admins: {
+        Row: {
+          active: boolean
+          created_at: string
+          display: string
+          id: string
+          name: string
+          phone: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display: string
+          id?: string
+          name: string
+          phone: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display?: string
+          id?: string
+          name?: string
+          phone?: string
+          sort_order?: number
         }
         Relationships: []
       }
