@@ -16,6 +16,7 @@ import { Route as ContaRouteImport } from './routes/conta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServidoresIndexRouteImport } from './routes/servidores.index'
 import { Route as ServidoresSlugRouteImport } from './routes/servidores.$slug'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as ApiPublicMpWebhookRouteImport } from './routes/api/public/mp-webhook'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServidoresIndexRoute = ServidoresIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ServidoresRoute,
+} as any)
 const ServidoresSlugRoute = ServidoresSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/servidores': typeof ServidoresRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
+  '/servidores/': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -90,9 +97,9 @@ export interface FileRoutesByTo {
   '/conta': typeof ContaRoute
   '/loja': typeof LojaRoute
   '/regras': typeof RegrasRoute
-  '/servidores': typeof ServidoresRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
+  '/servidores': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
 }
 export interface FileRoutesById {
@@ -106,6 +113,7 @@ export interface FileRoutesById {
   '/servidores': typeof ServidoresRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
+  '/servidores/': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +128,7 @@ export interface FileRouteTypes {
     | '/servidores'
     | '/admin/pedidos'
     | '/servidores/$slug'
+    | '/servidores/'
     | '/api/public/mp-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -129,9 +138,9 @@ export interface FileRouteTypes {
     | '/conta'
     | '/loja'
     | '/regras'
-    | '/servidores'
     | '/admin/pedidos'
     | '/servidores/$slug'
+    | '/servidores'
     | '/api/public/mp-webhook'
   id:
     | '__root__'
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/servidores'
     | '/admin/pedidos'
     | '/servidores/$slug'
+    | '/servidores/'
     | '/api/public/mp-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servidores/': {
+      id: '/servidores/'
+      path: '/'
+      fullPath: '/servidores/'
+      preLoaderRoute: typeof ServidoresIndexRouteImport
+      parentRoute: typeof ServidoresRoute
+    }
     '/servidores/$slug': {
       id: '/servidores/$slug'
       path: '/$slug'
@@ -245,10 +262,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ServidoresRouteChildren {
   ServidoresSlugRoute: typeof ServidoresSlugRoute
+  ServidoresIndexRoute: typeof ServidoresIndexRoute
 }
 
 const ServidoresRouteChildren: ServidoresRouteChildren = {
   ServidoresSlugRoute: ServidoresSlugRoute,
+  ServidoresIndexRoute: ServidoresIndexRoute,
 }
 
 const ServidoresRouteWithChildren = ServidoresRoute._addFileChildren(
