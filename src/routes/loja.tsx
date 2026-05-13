@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Crown, Shield, Star, Zap, Package } from "lucide-react";
+import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2 } from "lucide-react";
 import {
   PLANS_PRICES,
   AMMO_PACK_MIN,
@@ -11,7 +12,7 @@ import {
   SERVERS,
   type PlanTier,
 } from "@/lib/servers";
-import { supabase } from "@/integrations/supabase/client";
+import { createPixOrder, checkOrderPayment } from "@/lib/mercadopago.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/loja")({
@@ -275,6 +276,13 @@ function CheckoutForm({
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pix, setPix] = useState<{
+    orderId: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    amount: number;
+  } | null>(null);
   const [form, setForm] = useState({
     nick: "",
     contact_email: "",
@@ -282,6 +290,20 @@ function CheckoutForm({
     steamid: "",
     server_slug: forcedServerSlug ?? SERVER_OPTIONS[0]?.slug ?? "",
   });
+
+  const createPix = useServerFn(createPixOrder);
+
+  if (pix) {
+    return (
+      <PixPanel
+        pix={pix}
+        onClose={() => {
+          setPix(null);
+          setOpen(false);
+        }}
+      />
+    );
+  }
 
   if (!open) {
     return (
@@ -301,35 +323,43 @@ function CheckoutForm({
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("orders").insert({
-      product_type: productType,
-      plan_tier: planTier ?? null,
-      ammo_packs: ammoPacks ?? null,
-      amount_brl: amount,
-      nick: form.nick,
-      contact_email: form.contact_email,
-      contact_whatsapp: form.contact_whatsapp || null,
-      steamid: form.steamid || null,
-      server_slug: form.server_slug,
-      status: "pending",
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao criar pedido", { description: error.message });
-      return;
+    try {
+      const payload =
+        productType === "plan"
+          ? {
+              product_type: "plan" as const,
+              plan_tier: planTier!,
+              nick: form.nick,
+              contact_email: form.contact_email,
+              contact_whatsapp: form.contact_whatsapp || null,
+              steamid: form.steamid || null,
+              server_slug: form.server_slug,
+            }
+          : {
+              product_type: "ammo_packs" as const,
+              ammo_packs: ammoPacks!,
+              nick: form.nick,
+              contact_email: form.contact_email,
+              contact_whatsapp: form.contact_whatsapp || null,
+              steamid: form.steamid || null,
+              server_slug: form.server_slug,
+            };
+      const result = await createPix({ data: payload });
+      setPix({
+        orderId: result.orderId,
+        qrCode: result.qrCode,
+        qrCodeBase64: result.qrCodeBase64,
+        ticketUrl: result.ticketUrl,
+        amount: result.amount,
+      });
+      toast.success("PIX gerado! Escaneie ou copie o código.");
+    } catch (err) {
+      toast.error("Erro ao gerar PIX", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setLoading(false);
     }
-    toast.success("Pedido criado!", {
-      description:
-        "Entraremos em contato com as instruções de pagamento via PIX.",
-    });
-    setOpen(false);
-    setForm({
-      nick: "",
-      contact_email: "",
-      contact_whatsapp: "",
-      steamid: "",
-      server_slug: forcedServerSlug ?? SERVER_OPTIONS[0]?.slug ?? "",
-    });
   };
 
   return (
@@ -395,15 +425,146 @@ function CheckoutForm({
           disabled={loading}
           className="flex-1 px-3 py-2 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground disabled:opacity-50 transition"
         >
-          {loading ? "Enviando..." : "Enviar pedido"}
+          {loading ? "Gerando PIX..." : "Gerar PIX"}
         </button>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        Após enviar, entraremos em contato pelo email/WhatsApp informado com a
-        chave PIX e instruções. O benefício é aplicado em até 24h após
-        confirmação.
+        Pagamento via PIX (Mercado Pago). Após a confirmação automática, um
+        admin aplica o benefício no servidor em até 24h.
       </p>
     </form>
+  );
+}
+
+function PixPanel({
+  pix,
+  onClose,
+}: {
+  pix: {
+    orderId: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    amount: number;
+  };
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<string>("pending");
+  const checkFn = useServerFn(checkOrderPayment);
+
+  useEffect(() => {
+    if (status === "paid" || status === "delivered") return;
+    const id = setInterval(async () => {
+      try {
+        const r = await checkFn({ data: { orderId: pix.orderId } });
+        if (r.status) setStatus(r.status);
+      } catch {
+        /* noop */
+      }
+    }, 5000);
+    return () => clearInterval(id);
+  }, [pix.orderId, status, checkFn]);
+
+  const copy = async () => {
+    if (!pix.qrCode) return;
+    await navigator.clipboard.writeText(pix.qrCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const paid = status === "paid" || status === "delivered";
+
+  return (
+    <div className="mt-5 rounded-lg border border-accent/40 bg-secondary/30 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="font-display text-lg font-bold">
+          {paid ? "Pagamento confirmado!" : "Pague com PIX"}
+        </h4>
+        <span
+          className={cn(
+            "px-2 py-0.5 text-[10px] uppercase rounded",
+            paid ? "bg-success/20 text-success" : "bg-secondary",
+          )}
+        >
+          {paid ? "Pago" : "Aguardando"}
+        </span>
+      </div>
+
+      {paid ? (
+        <div className="text-center py-6">
+          <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
+          <p className="mt-3 text-sm">
+            Recebemos seu pagamento. Um admin vai aplicar o benefício no
+            servidor em até 24h.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground font-mono">
+            Pedido: {pix.orderId.slice(0, 8)}
+          </p>
+        </div>
+      ) : (
+        <>
+          {pix.qrCodeBase64 && (
+            <div className="flex justify-center bg-white rounded-md p-3">
+              <img
+                src={`data:image/png;base64,${pix.qrCodeBase64}`}
+                alt="QR Code PIX"
+                className="w-48 h-48"
+              />
+            </div>
+          )}
+          {pix.qrCode && (
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                PIX copia e cola
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  readOnly
+                  value={pix.qrCode}
+                  className="flex-1 rounded-md border border-border bg-input px-3 py-2 text-xs font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={copy}
+                  className="px-3 py-2 text-xs rounded-md border border-border hover:bg-secondary transition"
+                >
+                  {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Verificando pagamento automaticamente...
+          </div>
+          <div className="text-sm">
+            Total:{" "}
+            <span className="font-display text-lg font-bold text-gradient">
+              R$ {pix.amount.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+          {pix.ticketUrl && (
+            <a
+              href={pix.ticketUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-xs text-accent hover:underline"
+            >
+              Abrir comprovante / QR no Mercado Pago →
+            </a>
+          )}
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="w-full px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary transition"
+      >
+        Fechar
+      </button>
+    </div>
   );
 }
 
