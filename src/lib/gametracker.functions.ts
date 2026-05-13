@@ -87,37 +87,76 @@ function parseStatusOnline(html: string): boolean {
   return false;
 }
 
+function parseAllTables(html: string): { headers: string[]; rows: string[][] }[] {
+  const tables = [...html.matchAll(/<table[^>]*class="[^"]*table_lst[^"]*"[^>]*>([\s\S]*?)<\/table>/gi)];
+  return tables.map((t) => {
+    const rowMatches = [...t[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+    let headers: string[] = [];
+    const rows: string[][] = [];
+    for (const r of rowMatches) {
+      const ths = [...r[1].matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)].map((c) => stripTags(c[1]));
+      if (ths.length) {
+        headers = ths;
+        continue;
+      }
+      const tds = [...r[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+      if (!headers.length && tds.length && /Rank|Name|Score|Time/i.test(tds.join(" "))) {
+        headers = tds;
+        continue;
+      }
+      if (tds.length) rows.push(tds);
+    }
+    return { headers, rows };
+  });
+}
+
+function parseTimeToHours(raw: string): number {
+  const hm = raw.match(/(\d+)\s*h(?:\s*(\d+)\s*m)?/i);
+  if (hm) return parseInt(hm[1], 10) + (hm[2] ? parseInt(hm[2], 10) / 60 : 0);
+  const n = parseFloat(raw.replace(",", "."));
+  return Number.isNaN(n) ? 0 : n;
+}
+
 function parseRankingTable(html: string): TopPlayer[] {
-  const tableMatch = html.match(
-    /<table[^>]*class="[^"]*table_lst[^"]*"[^>]*>([\s\S]*?)<\/table>/i,
-  );
-  if (!tableMatch) return [];
-  const rows = [...tableMatch[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+  const tables = parseAllTables(html);
+  const t = tables.find((tbl) => /Rank/i.test(tbl.headers.join(" ")));
+  if (!t) return [];
   const out: TopPlayer[] = [];
-  for (const row of rows) {
-    const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(
-      (c) => stripTags(c[1]),
-    );
+  for (const cells of t.rows) {
     if (cells.length < 4) continue;
-    // Skip header row (col_h cells contain "Rank", "Name", etc.)
-    if (/Rank/i.test(cells[0]) && /Name/i.test(cells[1])) continue;
     const rank = parseInt(cells[0].replace(/\D/g, ""), 10);
     if (Number.isNaN(rank)) continue;
     const name = cells[1];
     if (!name) continue;
     const score = parseFloat(cells[2].replace(/[^\d.,-]/g, "").replace(",", ".")) || 0;
-    // time like "12h 34m" or "12.5"
-    const timeRaw = cells[3];
-    let timeHours = 0;
-    const hm = timeRaw.match(/(\d+)\s*h(?:\s*(\d+)\s*m)?/i);
-    if (hm) {
-      timeHours = parseInt(hm[1], 10) + (hm[2] ? parseInt(hm[2], 10) / 60 : 0);
-    } else {
-      const n = parseFloat(timeRaw.replace(",", "."));
-      if (!Number.isNaN(n)) timeHours = n;
-    }
-    out.push({ rank, name, score, timeHours });
+    out.push({ rank, name, score, timeHours: parseTimeToHours(cells[3]) });
     if (out.length >= 50) break;
+  }
+  return out;
+}
+
+function parseLivePlayers(html: string): LivePlayer[] {
+  const tables = parseAllTables(html);
+  const t = tables.find(
+    (tbl) =>
+      /Name/i.test(tbl.headers.join(" ")) &&
+      /Time/i.test(tbl.headers.join(" ")) &&
+      !/Rank/i.test(tbl.headers.join(" ")),
+  );
+  if (!t) return [];
+  const nameIdx = Math.max(0, t.headers.findIndex((h) => /Name/i.test(h)));
+  const scoreIdx = t.headers.findIndex((h) => /Score/i.test(h));
+  const timeIdx = t.headers.findIndex((h) => /Time/i.test(h));
+  const out: LivePlayer[] = [];
+  for (const cells of t.rows) {
+    const name = cells[nameIdx];
+    if (!name) continue;
+    const scoreStr = cells[scoreIdx >= 0 ? scoreIdx : 1] ?? "";
+    const timeStr = cells[timeIdx >= 0 ? timeIdx : 2] ?? "";
+    const score = parseFloat(scoreStr.replace(/[^\d.,-]/g, "").replace(",", ".")) || 0;
+    const timeMinutes = Math.round(parseTimeToHours(timeStr) * 60);
+    out.push({ name, score, timeMinutes });
+    if (out.length >= 64) break;
   }
   return out;
 }
@@ -170,8 +209,7 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
     const map = parseMap(infoHtml);
     const online = parseStatusOnline(infoHtml);
     const topPlayers = parseRankingTable(topHtml || infoHtml);
-    // GameTracker doesn't expose a live player list on the public info page.
-    const livePlayers: LivePlayer[] = [];
+    const livePlayers = parseLivePlayers(infoHtml);
 
     return {
       slug: server.slug,
@@ -200,7 +238,7 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 
 // In-memory cache (per worker instance) ~ 60s
 const cache = new Map<string, { at: number; data: ServerStatus }>();
-const TTL_MS = 60_000;
+const TTL_MS = 20_000;
 
 export const getServerStatus = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) => input)
