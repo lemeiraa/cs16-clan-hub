@@ -117,7 +117,7 @@ export function ServerCard({ server, compact = false }: Props) {
           <div className="flex items-center gap-2 text-muted-foreground min-w-0">
             <MapPin className="h-4 w-4 text-accent shrink-0" />
             <span className="font-mono text-foreground truncate">
-              {server.comingSoon ? "—" : status?.map ?? "—"}
+              {server.comingSoon ? "—" : mapName ?? "—"}
             </span>
           </div>
         </div>
