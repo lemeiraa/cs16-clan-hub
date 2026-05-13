@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ServerCard } from "@/components/server-card";
 import { fetchServers } from "@/lib/servers-db";
+import { supabase } from "@/integrations/supabase/client";
+import { Newspaper, Pin, X } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
@@ -162,6 +165,149 @@ function Index() {
           </a>
         </div>
       </section>
+
+      <NewsSection />
     </>
+  );
+}
+
+type NewsItem = {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  image_url: string | null;
+  pinned: boolean;
+  created_at: string;
+};
+
+function NewsSection() {
+  const [open, setOpen] = useState<NewsItem | null>(null);
+  const { data: news = [], isLoading } = useQuery({
+    queryKey: ["news", "home"],
+    queryFn: async (): Promise<NewsItem[]> => {
+      const { data, error } = await supabase
+        .from("news")
+        .select("id,title,excerpt,content,category,image_url,pinned,created_at")
+        .eq("published", true)
+        .order("pinned", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (error) throw error;
+      return (data ?? []) as NewsItem[];
+    },
+    staleTime: 60_000,
+  });
+
+  if (!isLoading && news.length === 0) return null;
+
+  return (
+    <section className="container mx-auto px-4 pb-20">
+      <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold flex items-center gap-2">
+            <Newspaper className="h-3.5 w-3.5" /> Fique por dentro
+          </p>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mt-1">
+            Notícias e Atualizações
+          </h2>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-48 rounded-xl border border-border bg-card animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {news.map((n) => (
+            <button
+              key={n.id}
+              onClick={() => setOpen(n)}
+              className="group text-left rounded-xl border border-border bg-card overflow-hidden hover:border-accent transition shadow-sm hover:shadow-glow flex flex-col"
+            >
+              {n.image_url ? (
+                <div
+                  className="aspect-[16/9] bg-cover bg-center"
+                  style={{ backgroundImage: `url(${n.image_url})` }}
+                />
+              ) : (
+                <div className="aspect-[16/9] bg-gradient-brand/30 flex items-center justify-center">
+                  <Newspaper className="h-10 w-10 text-accent/60" />
+                </div>
+              )}
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-accent/15 text-accent font-semibold">
+                    {n.category}
+                  </span>
+                  {n.pinned && (
+                    <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-primary/20 text-primary inline-flex items-center gap-1">
+                      <Pin className="h-3 w-3" /> Fixada
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-display text-lg font-bold mt-2 group-hover:text-accent transition">
+                  {n.title}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{n.excerpt}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-3">
+                  {new Date(n.created_at).toLocaleDateString("pt-BR", {
+                    day: "2-digit", month: "long", year: "numeric",
+                  })}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4"
+          onClick={() => setOpen(null)}
+        >
+          <div
+            className="bg-card rounded-xl border border-border max-w-2xl w-full my-8 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {open.image_url && (
+              <div
+                className="aspect-[16/9] bg-cover bg-center"
+                style={{ backgroundImage: `url(${open.image_url})` }}
+              />
+            )}
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-accent/15 text-accent font-semibold">
+                    {open.category}
+                  </span>
+                  <h3 className="font-display text-2xl font-bold mt-2">{open.title}</h3>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">
+                    {new Date(open.created_at).toLocaleDateString("pt-BR", {
+                      day: "2-digit", month: "long", year: "numeric",
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpen(null)}
+                  className="p-2 rounded-md hover:bg-secondary"
+                  aria-label="Fechar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {open.content || open.excerpt}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

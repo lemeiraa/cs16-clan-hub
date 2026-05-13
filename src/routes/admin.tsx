@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Painel Admin — CS Nostalgia" }] }),
 });
 
-type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "usuarios";
+type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios";
 
 function AdminPanel() {
   const navigate = useNavigate();
@@ -43,6 +43,7 @@ function AdminPanel() {
     { id: "ammo", label: "Ammo Packs" },
     { id: "pagamentos", label: "Pagamentos" },
     { id: "whatsapp", label: "WhatsApp" },
+    { id: "noticias", label: "Notícias" },
     { id: "usuarios", label: "Usuários" },
   ];
 
@@ -84,6 +85,7 @@ function AdminPanel() {
         {tab === "ammo" && <AmmoAdmin />}
         {tab === "pagamentos" && <PaymentMethodsAdmin />}
         {tab === "whatsapp" && <WhatsappAdminsAdmin />}
+        {tab === "noticias" && <NewsAdmin />}
         {tab === "usuarios" && <UsersAdmin />}
       </div>
     </section>
@@ -566,6 +568,119 @@ function UsersAdmin() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ============== NEWS ============== */
+function NewsAdmin() {
+  const [list, setList] = useState<any[]>([]);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("news")
+      .select("*")
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setList(data ?? []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id: string) => {
+    if (!confirm("Excluir notícia?")) return;
+    const { error } = await supabase.from("news").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Excluída"); load();
+  };
+
+  const togglePub = async (n: any) => {
+    const { error } = await supabase.from("news").update({ published: !n.published }).eq("id", n.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between mb-4">
+        <h2 className="font-display text-xl font-bold">Notícias e Atualizações ({list.length})</h2>
+        <button onClick={() => setCreating(true)} className="px-3 py-1.5 text-xs uppercase rounded bg-accent/20 text-accent hover:bg-accent/30">+ Nova</button>
+      </div>
+      <div className="grid gap-3">
+        {list.map((n) => (
+          <div key={n.id} className="rounded-lg border border-border bg-card p-4 flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-accent/15 text-accent">{n.category}</span>
+                {n.pinned && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-primary/20 text-primary">Fixada</span>}
+                {!n.published && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">Rascunho</span>}
+              </div>
+              <p className="font-bold mt-1">{n.title}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2">{n.excerpt}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.created_at).toLocaleString("pt-BR")}</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => togglePub(n)} className="px-2 py-1 text-xs rounded bg-secondary hover:bg-secondary/70">
+                {n.published ? "Despublicar" : "Publicar"}
+              </button>
+              <button onClick={() => setEditing(n)} className="px-2 py-1 text-xs rounded bg-secondary hover:bg-secondary/70">Editar</button>
+              <button onClick={() => remove(n.id)} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">Excluir</button>
+            </div>
+          </div>
+        ))}
+        {list.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma notícia ainda.</p>}
+      </div>
+      {(editing || creating) && (
+        <NewsForm initial={editing} onClose={() => { setEditing(null); setCreating(false); }}
+          onSaved={() => { setEditing(null); setCreating(false); load(); }} />
+      )}
+    </div>
+  );
+}
+
+function NewsForm({ initial, onClose, onSaved }: any) {
+  const [f, setF] = useState({
+    title: initial?.title ?? "",
+    excerpt: initial?.excerpt ?? "",
+    content: initial?.content ?? "",
+    category: initial?.category ?? "Atualização",
+    image_url: initial?.image_url ?? "",
+    published: initial?.published ?? true,
+    pinned: initial?.pinned ?? false,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!f.title.trim()) return toast.error("Título obrigatório");
+    setSaving(true);
+    try {
+      const payload = { ...f, image_url: f.image_url || null };
+      const op = initial
+        ? supabase.from("news").update(payload).eq("id", initial.id)
+        : supabase.from("news").insert(payload);
+      const { error } = await op;
+      if (error) throw error;
+      toast.success("Salvo"); onSaved();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Modal title={initial ? "Editar notícia" : "Nova notícia"} onClose={onClose}>
+      <Input label="Título *" value={f.title} onChange={(v) => setF({ ...f, title: v })} />
+      <div className="grid gap-3 md:grid-cols-2">
+        <Input label="Categoria" value={f.category} onChange={(v) => setF({ ...f, category: v })} />
+        <Input label="Imagem (URL — opcional)" value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} />
+      </div>
+      <Textarea label="Resumo (aparece no card)" value={f.excerpt} onChange={(v) => setF({ ...f, excerpt: v })} rows={2} />
+      <Textarea label="Conteúdo completo" value={f.content} onChange={(v) => setF({ ...f, content: v })} rows={6} />
+      <div className="flex gap-4">
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.published} onChange={(e) => setF({ ...f, published: e.target.checked })} /> Publicada</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.pinned} onChange={(e) => setF({ ...f, pinned: e.target.checked })} /> Fixar no topo</label>
+      </div>
+      <ModalActions onClose={onClose} onSave={save} saving={saving} />
+    </Modal>
   );
 }
 
