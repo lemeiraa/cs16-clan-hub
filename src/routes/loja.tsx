@@ -283,6 +283,7 @@ function CheckoutForm({
     ticketUrl: string | null;
     amount: number;
   } | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "whatsapp">("pix");
   const [form, setForm] = useState({
     nick: "",
     contact_email: "",
@@ -292,6 +293,23 @@ function CheckoutForm({
   });
 
   const createPix = useServerFn(createPixOrder);
+
+  const ADMINS_WHATSAPP = [
+    { name: "Jonathan (zgd.dll)", phone: "5521968612190", display: "+55 21 96861-2190" },
+    { name: "Alexander (Aleeck)", phone: "5519992440346", display: "+55 19 99244-0346" },
+  ];
+
+  const productLabel =
+    productType === "plan"
+      ? `Cargo ${planTier?.toUpperCase()}`
+      : `${ammoPacks?.toLocaleString("pt-BR")} Ammo Packs`;
+
+  const serverName =
+    SERVER_OPTIONS.find((s) => s.slug === form.server_slug)?.name ?? form.server_slug;
+
+  const waMessage = encodeURIComponent(
+    `Olá! Quero comprar:\n\n• Produto: ${productLabel}\n• Servidor: ${serverName}\n• Nick: ${form.nick}\n• Email: ${form.contact_email}${form.steamid ? `\n• SteamID: ${form.steamid}` : ""}\n• Total: R$ ${amount.toFixed(2).replace(".", ",")}\n\nComo faço o pagamento?`,
+  );
 
   if (pix) {
     return (
