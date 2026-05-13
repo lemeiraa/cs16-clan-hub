@@ -81,12 +81,26 @@ export function SiteHeader() {
               <Shield className="h-3.5 w-3.5" /> Admin
             </Link>
           )}
-          <Link
-            to="/auth"
-            className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
-          >
-            Entrar
-          </Link>
+          {user ? (
+            <Link
+              to="/conta"
+              className="ml-2 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary transition"
+            >
+              <img
+                src={avatarUrlFor(user.nick || user.email, user.avatar_url ?? undefined)}
+                alt=""
+                className="h-7 w-7 rounded-md bg-card"
+              />
+              <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || "Conta"}</span>
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
+            >
+              Entrar
+            </Link>
+          )}
         </nav>
 
         <button
