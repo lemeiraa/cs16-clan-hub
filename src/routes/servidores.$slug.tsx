@@ -4,37 +4,32 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Copy, Check, Users, MapPin, ExternalLink } from "lucide-react";
-import {
-  getServerBySlug,
-  serverAddress,
-  steamConnectUrl,
-} from "@/lib/servers";
+import type { ServerInfo } from "@/lib/servers";
+import { serverAddress, steamConnectUrl } from "@/lib/servers";
+import { fetchServerBySlug } from "@/lib/servers-db";
 import { getServerStatus } from "@/lib/gametracker.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/servidores/$slug")({
-  beforeLoad: ({ params }) => {
-    if (!getServerBySlug(params.slug)) throw notFound();
-  },
   component: ServerDetail,
-  head: ({ params }) => {
-    const s = getServerBySlug(params.slug);
-    return {
-      meta: [
-        { title: `${s?.name ?? "Servidor"} — CS Nostalgia` },
-        {
-          name: "description",
-          content:
-            s?.description ?? "Servidor de Counter-Strike 1.6 — CS Nostalgia",
-        },
-      ],
-    };
-  },
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug} — CS Nostalgia` },
+      {
+        name: "description",
+        content: "Servidor de Counter-Strike 1.6 — CS Nostalgia",
+      },
+    ],
+  }),
 });
 
 function ServerDetail() {
   const { slug } = Route.useParams();
-  const server = getServerBySlug(slug)!;
+  const { data: server, isLoading: loadingServer } = useQuery({
+    queryKey: ["server", slug],
+    queryFn: () => fetchServerBySlug(slug),
+    staleTime: 30_000,
+  });
   const fetchStatus = useServerFn(getServerStatus);
   const [tab, setTab] = useState<"players" | "ranking" | "comandos" | "regras">(
     "players",
