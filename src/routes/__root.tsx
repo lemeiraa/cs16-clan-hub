@@ -141,6 +141,7 @@ function RootComponent() {
         </main>
         <SiteFooter />
       </div>
+      <ScrollToTop />
       <Toaster />
     </QueryClientProvider>
   );
