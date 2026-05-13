@@ -9,38 +9,147 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ServidoresRouteImport } from './routes/servidores'
+import { Route as RegrasRouteImport } from './routes/regras'
+import { Route as LojaRouteImport } from './routes/loja'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServidoresSlugRouteImport } from './routes/servidores.$slug'
+import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 
+const ServidoresRoute = ServidoresRouteImport.update({
+  id: '/servidores',
+  path: '/servidores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegrasRoute = RegrasRouteImport.update({
+  id: '/regras',
+  path: '/regras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LojaRoute = LojaRouteImport.update({
+  id: '/loja',
+  path: '/loja',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServidoresSlugRoute = ServidoresSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ServidoresRoute,
+} as any)
+const AdminPedidosRoute = AdminPedidosRouteImport.update({
+  id: '/admin/pedidos',
+  path: '/admin/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/loja': typeof LojaRoute
+  '/regras': typeof RegrasRoute
+  '/servidores': typeof ServidoresRouteWithChildren
+  '/admin/pedidos': typeof AdminPedidosRoute
+  '/servidores/$slug': typeof ServidoresSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/loja': typeof LojaRoute
+  '/regras': typeof RegrasRoute
+  '/servidores': typeof ServidoresRouteWithChildren
+  '/admin/pedidos': typeof AdminPedidosRoute
+  '/servidores/$slug': typeof ServidoresSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/loja': typeof LojaRoute
+  '/regras': typeof RegrasRoute
+  '/servidores': typeof ServidoresRouteWithChildren
+  '/admin/pedidos': typeof AdminPedidosRoute
+  '/servidores/$slug': typeof ServidoresSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/loja'
+    | '/regras'
+    | '/servidores'
+    | '/admin/pedidos'
+    | '/servidores/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/loja'
+    | '/regras'
+    | '/servidores'
+    | '/admin/pedidos'
+    | '/servidores/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/loja'
+    | '/regras'
+    | '/servidores'
+    | '/admin/pedidos'
+    | '/servidores/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  LojaRoute: typeof LojaRoute
+  RegrasRoute: typeof RegrasRoute
+  ServidoresRoute: typeof ServidoresRouteWithChildren
+  AdminPedidosRoute: typeof AdminPedidosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/servidores': {
+      id: '/servidores'
+      path: '/servidores'
+      fullPath: '/servidores'
+      preLoaderRoute: typeof ServidoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regras': {
+      id: '/regras'
+      path: '/regras'
+      fullPath: '/regras'
+      preLoaderRoute: typeof RegrasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loja': {
+      id: '/loja'
+      path: '/loja'
+      fullPath: '/loja'
+      preLoaderRoute: typeof LojaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +157,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servidores/$slug': {
+      id: '/servidores/$slug'
+      path: '/$slug'
+      fullPath: '/servidores/$slug'
+      preLoaderRoute: typeof ServidoresSlugRouteImport
+      parentRoute: typeof ServidoresRoute
+    }
+    '/admin/pedidos': {
+      id: '/admin/pedidos'
+      path: '/admin/pedidos'
+      fullPath: '/admin/pedidos'
+      preLoaderRoute: typeof AdminPedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface ServidoresRouteChildren {
+  ServidoresSlugRoute: typeof ServidoresSlugRoute
+}
+
+const ServidoresRouteChildren: ServidoresRouteChildren = {
+  ServidoresSlugRoute: ServidoresSlugRoute,
+}
+
+const ServidoresRouteWithChildren = ServidoresRoute._addFileChildren(
+  ServidoresRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  LojaRoute: LojaRoute,
+  RegrasRoute: RegrasRoute,
+  ServidoresRoute: ServidoresRouteWithChildren,
+  AdminPedidosRoute: AdminPedidosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
