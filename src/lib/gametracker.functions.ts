@@ -209,8 +209,7 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
     const map = parseMap(infoHtml);
     const online = parseStatusOnline(infoHtml);
     const topPlayers = parseRankingTable(topHtml || infoHtml);
-    // GameTracker doesn't expose a live player list on the public info page.
-    const livePlayers: LivePlayer[] = [];
+    const livePlayers = parseLivePlayers(infoHtml);
 
     return {
       slug: server.slug,
