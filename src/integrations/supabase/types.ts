@@ -211,6 +211,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           banned: boolean
           created_at: string
           email: string | null
@@ -218,6 +219,7 @@ export type Database = {
           nick: string | null
         }
         Insert: {
+          avatar_url?: string | null
           banned?: boolean
           created_at?: string
           email?: string | null
@@ -225,6 +227,7 @@ export type Database = {
           nick?: string | null
         }
         Update: {
+          avatar_url?: string | null
           banned?: boolean
           created_at?: string
           email?: string | null
