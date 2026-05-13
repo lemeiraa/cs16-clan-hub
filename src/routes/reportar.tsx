@@ -102,10 +102,12 @@ function ReportarPage() {
 
       const text = encodeURIComponent(lines);
       const phone = admins[0].phone.replace(/\D/g, "");
-      window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener,noreferrer");
-      toast.success("Report preparado! Envie a mensagem no WhatsApp para concluir.");
+      const waUrl = `https://wa.me/${phone}?text=${text}`;
+      toast.success("Abrindo WhatsApp com o report...");
       setForm({ name: "", nick: "", reportedNick: "", occurredAt: "", notes: "" });
       setVideo(null);
+      // Navega na mesma aba para evitar bloqueio de pop-up
+      window.location.href = waUrl;
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Erro ao preparar report.");
