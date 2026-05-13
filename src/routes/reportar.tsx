@@ -114,6 +114,41 @@ function ReportarPage() {
     }
   };
 
+  if (!authChecked) {
+    return (
+      <section className="container mx-auto px-4 py-20 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </section>
+    );
+  }
+
+  if (!authed) {
+    return (
+      <section className="container mx-auto px-4 py-12 max-w-xl text-center">
+        <Lock className="mx-auto h-10 w-10 text-accent" />
+        <h1 className="font-display text-3xl font-bold mt-4">Login necessário</h1>
+        <p className="text-muted-foreground mt-2">
+          Para enviar uma denúncia você precisa estar logado na sua conta.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/auth"
+            search={{ redirect: "/reportar" }}
+            className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
+          >
+            Entrar / Cadastrar
+          </Link>
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-secondary transition"
+          >
+            Voltar ao início
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="container mx-auto px-4 py-12 max-w-3xl">
       <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Comunidade</p>
