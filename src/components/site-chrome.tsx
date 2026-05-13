@@ -17,14 +17,23 @@ export function SiteHeader() {
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
+    let mounted = true;
     const check = async (uid: string | undefined) => {
+      if (!mounted) return;
       if (!uid) { setIsAdmin(false); return; }
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
-      setIsAdmin(!!data);
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (mounted) setIsAdmin(!!data);
     };
-    supabase.auth.getUser().then(({ data }) => check(data.user?.id));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => check(session?.user?.id));
-    return () => sub.subscription.unsubscribe();
+    supabase.auth.getSession().then(({ data }) => check(data.session?.user?.id));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      window.setTimeout(() => check(session?.user?.id), 0);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
   return (
