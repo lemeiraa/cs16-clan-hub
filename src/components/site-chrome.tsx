@@ -125,13 +125,23 @@ export function SiteHeader() {
                 {n.label}
               </Link>
             ))}
-            <Link
-              to="/auth"
-              onClick={() => setOpen(false)}
-              className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center mt-2"
-            >
-              Entrar
-            </Link>
+            {user ? (
+              <Link
+                to="/conta"
+                onClick={() => setOpen(false)}
+                className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md border border-border text-center mt-2 inline-flex items-center justify-center gap-2"
+              >
+                <UserIcon className="h-4 w-4" /> {user.nick || "Minha conta"}
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setOpen(false)}
+                className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center mt-2"
+              >
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
       )}
