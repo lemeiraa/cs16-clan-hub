@@ -65,6 +65,11 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link to="/admin" className="ml-2 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border border-accent text-accent hover:bg-accent/10 transition inline-flex items-center gap-1">
+              <Shield className="h-3.5 w-3.5" /> Admin
+            </Link>
+          )}
           <Link
             to="/auth"
             className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
