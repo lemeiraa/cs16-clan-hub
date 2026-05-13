@@ -428,32 +428,118 @@ function CheckoutForm({
           </select>
         </div>
       )}
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          Forma de pagamento
+        </label>
+        <div className="mt-1 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("pix")}
+            className={cn(
+              "px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border transition",
+              paymentMethod === "pix"
+                ? "border-accent bg-accent/10 text-foreground"
+                : "border-border text-muted-foreground hover:bg-secondary",
+            )}
+          >
+            PIX automático
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("whatsapp")}
+            className={cn(
+              "px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border transition",
+              paymentMethod === "whatsapp"
+                ? "border-accent bg-accent/10 text-foreground"
+                : "border-border text-muted-foreground hover:bg-secondary",
+            )}
+          >
+            WhatsApp
+          </button>
+        </div>
+      </div>
+
       <div className="text-sm">
         Total:{" "}
         <span className="font-display text-lg font-bold text-gradient">
           R$ {amount.toFixed(2).replace(".", ",")}
         </span>
       </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary transition"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 px-3 py-2 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground disabled:opacity-50 transition"
-        >
-          {loading ? "Gerando PIX..." : "Gerar PIX"}
-        </button>
-      </div>
-      <p className="text-[11px] text-muted-foreground">
-        Pagamento via PIX (Mercado Pago). Após a confirmação automática, um
-        admin aplica o benefício no servidor em até 24h.
-      </p>
+
+      {paymentMethod === "pix" ? (
+        <>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-3 py-2 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground disabled:opacity-50 transition"
+            >
+              {loading ? "Gerando PIX..." : "Gerar PIX"}
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Pagamento via PIX (Mercado Pago). Após a confirmação automática, um
+            admin aplica o benefício no servidor em até 24h.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Fale com um admin no WhatsApp para combinar o pagamento:
+            </p>
+            {ADMINS_WHATSAPP.map((a) => {
+              const canSend =
+                form.nick &&
+                form.contact_email &&
+                form.contact_whatsapp &&
+                form.contact_whatsapp.replace(/\D/g, "").length >= 10;
+              return (
+                <a
+                  key={a.phone}
+                  href={canSend ? `https://wa.me/${a.phone}?text=${waMessage}` : undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    if (!canSend) {
+                      e.preventDefault();
+                      toast.error("Preencha nick, email e WhatsApp antes de continuar.");
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center justify-between gap-2 px-3 py-2.5 rounded-md border transition",
+                    canSend
+                      ? "border-accent/50 bg-accent/5 hover:bg-accent/10"
+                      : "border-border opacity-60 cursor-not-allowed",
+                  )}
+                >
+                  <span className="text-sm font-semibold">{a.name}</span>
+                  <span className="text-xs font-mono text-accent">{a.display}</span>
+                </a>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="w-full px-3 py-2 text-sm rounded-md border border-border hover:bg-secondary transition"
+          >
+            Cancelar
+          </button>
+          <p className="text-[11px] text-muted-foreground">
+            O admin confirma o pagamento manualmente e aplica o benefício no
+            servidor em até 24h.
+          </p>
+        </>
+      )}
     </form>
   );
 }
