@@ -340,6 +340,10 @@ function CheckoutForm({
       toast.error("Preencha nick e email.");
       return;
     }
+    if (!form.contact_whatsapp || form.contact_whatsapp.replace(/\D/g, "").length < 10) {
+      toast.error("WhatsApp é obrigatório para concluir a compra.");
+      return;
+    }
     setLoading(true);
     try {
       const payload =
@@ -349,7 +353,7 @@ function CheckoutForm({
               plan_tier: planTier!,
               nick: form.nick,
               contact_email: form.contact_email,
-              contact_whatsapp: form.contact_whatsapp || null,
+              contact_whatsapp: form.contact_whatsapp,
               steamid: form.steamid || null,
               server_slug: form.server_slug,
             }
@@ -358,7 +362,7 @@ function CheckoutForm({
               ammo_packs: ammoPacks!,
               nick: form.nick,
               contact_email: form.contact_email,
-              contact_whatsapp: form.contact_whatsapp || null,
+              contact_whatsapp: form.contact_whatsapp,
               steamid: form.steamid || null,
               server_slug: form.server_slug,
             };
