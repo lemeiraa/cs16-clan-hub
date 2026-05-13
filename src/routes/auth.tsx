@@ -17,9 +17,11 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted && data.session?.user) navigate({ to: "/" });
     });
+    return () => { mounted = false; };
   }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
@@ -38,7 +40,13 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Conta criada!", { description: "Verifique seu email para confirmar." });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const timeout = new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("Tempo esgotado. Tente novamente.")), 12000);
+        });
+        const { error } = await Promise.race([
+          supabase.auth.signInWithPassword({ email, password }),
+          timeout,
+        ]);
         if (error) throw error;
         toast.success("Bem-vindo!");
         navigate({ to: "/" });
