@@ -401,7 +401,7 @@ function CheckoutForm({
         onChange={(v) => setForm({ ...form, contact_email: v })}
       />
       <Field
-        label="WhatsApp (opcional)"
+        label="WhatsApp *"
         value={form.contact_whatsapp}
         onChange={(v) => setForm({ ...form, contact_whatsapp: v })}
       />
