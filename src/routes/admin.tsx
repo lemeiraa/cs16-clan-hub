@@ -43,6 +43,7 @@ function AdminPanel() {
     { id: "ammo", label: "Ammo Packs" },
     { id: "pagamentos", label: "Pagamentos" },
     { id: "whatsapp", label: "WhatsApp" },
+    { id: "noticias", label: "Notícias" },
     { id: "usuarios", label: "Usuários" },
   ];
 
