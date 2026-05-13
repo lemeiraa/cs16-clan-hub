@@ -75,23 +75,23 @@ function ServerDetail() {
       <header className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{server.flag}</span>
+            <span className="text-3xl">{srv.flag}</span>
             <span className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">
-              {server.mode}
+              {srv.mode}
             </span>
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold mt-2">
-            {server.name}
+            {srv.name}
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            {server.description}
+            {srv.description}
           </p>
         </div>
-        {!server.comingSoon && (
+        {!srv.comingSoon && (
           <div className="flex flex-col gap-2 min-w-[260px]">
             <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-3 py-2">
               <code className="text-sm font-mono flex-1 truncate">
-                {serverAddress(server)}
+                {serverAddress(srv)}
               </code>
               <button onClick={onCopy} className="p-1 hover:text-accent">
                 {copied ? (
@@ -102,7 +102,7 @@ function ServerDetail() {
               </button>
             </div>
             <a
-              href={steamConnectUrl(server)}
+              href={steamConnectUrl(srv)}
               className="px-4 py-3 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center shadow-glow hover:opacity-90 transition"
             >
               Conectar via Steam
@@ -111,7 +111,7 @@ function ServerDetail() {
         )}
       </header>
 
-      {!server.comingSoon && (
+      {!srv.comingSoon && (
         <div className="grid gap-4 sm:grid-cols-3 mt-8">
           <StatCard
             label="Status"
@@ -160,29 +160,30 @@ function ServerDetail() {
       </div>
 
       <div className="mt-6">
-        {server.comingSoon && (
+        {srv.comingSoon && (
           <p className="text-muted-foreground">
             Este servidor estará disponível em breve. Fique de olho!
           </p>
         )}
-        {!server.comingSoon && tab === "players" && (
+        {!srv.comingSoon && tab === "players" && (
           <PlayersTable players={status?.livePlayers ?? []} loading={isLoading} />
         )}
-        {!server.comingSoon && tab === "ranking" && (
+        {!srv.comingSoon && tab === "ranking" && (
           <RankingTable players={status?.topPlayers ?? []} loading={isLoading} />
         )}
-        {tab === "comandos" && <CommandsList server={server} />}
-        {tab === "regras" && <RulesList server={server} />}
+        {tab === "comandos" && <CommandsList server={srv} />}
+        {tab === "regras" && <RulesList server={srv} />}
       </div>
 
-      {!server.comingSoon && (
+      {!srv.comingSoon && (
         <a
-          href={`https://www.gametracker.com/server_info/${serverAddress(server)}/`}
+          href={`https://www.gametracker.com/server_info/${serverAddress(srv)}/`}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-8 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-accent"
         >
           Ver no GameTracker <ExternalLink className="h-3 w-3" />
+
         </a>
       )}
     </section>
