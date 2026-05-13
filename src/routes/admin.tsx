@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Painel Admin — CS Nostalgia" }] }),
 });
 
-type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "usuarios";
+type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios";
 
 function AdminPanel() {
   const navigate = useNavigate();
