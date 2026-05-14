@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useState, useCallback, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,27 +15,36 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/admin")({
   component: AdminPanel,
   head: () => ({ meta: [{ title: "Painel Admin — CS Nostalgia" }] }),
+  beforeLoad: async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      throw redirect({ to: "/auth" });
+    }
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!role) {
+      toast.error("Acesso restrito a administradores");
+      throw redirect({ to: "/" });
+    }
+  },
 });
 
 type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios" | "reportes";
 
 function AdminPanel() {
-  const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>("servidores");
 
+  // Re-validate on auth state changes (logout/role removal)
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) { navigate({ to: "/auth" }); return; }
-      const { data: role } = await supabase
-        .from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
-      if (!role) { toast.error("Acesso restrito a administradores"); navigate({ to: "/" }); return; }
-      setReady(true);
-    })();
-  }, [navigate]);
-
-  if (!ready) return <div className="container mx-auto px-4 py-12">Carregando...</div>;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = "/auth";
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "servidores", label: "Servidores" },
