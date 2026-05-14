@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { UserPlus } from "lucide-react";
 import { getRecentUsers, type RecentUser } from "@/lib/users.functions";
 
@@ -24,7 +25,11 @@ function formatRelative(iso: string, lang: string) {
 
 function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0">
+    <Link
+      to="/jogadores/$id"
+      params={{ id: user.id }}
+      className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0 hover:border-accent hover:bg-card transition"
+    >
       {user.avatar_url ? (
         <img
           src={user.avatar_url}
@@ -43,7 +48,7 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
           {formatRelative(user.created_at, lang)}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
 
