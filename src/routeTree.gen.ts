@@ -20,6 +20,7 @@ import { Route as R403RouteImport } from './routes/403'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServidoresIndexRouteImport } from './routes/servidores.index'
 import { Route as ServidoresSlugRouteImport } from './routes/servidores.$slug'
+import { Route as JogadoresIdRouteImport } from './routes/jogadores.$id'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as ApiPublicMpWebhookRouteImport } from './routes/api/public/mp-webhook'
 
@@ -78,6 +79,11 @@ const ServidoresSlugRoute = ServidoresSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ServidoresRoute,
 } as any)
+const JogadoresIdRoute = JogadoresIdRouteImport.update({
+  id: '/jogadores/$id',
+  path: '/jogadores/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminPedidosRoute = AdminPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reportar': typeof ReportarRoute
   '/servidores': typeof ServidoresRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/jogadores/$id': typeof JogadoresIdRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
   '/servidores/': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/regras': typeof RegrasRoute
   '/reportar': typeof ReportarRoute
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/jogadores/$id': typeof JogadoresIdRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
   '/servidores': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/reportar': typeof ReportarRoute
   '/servidores': typeof ServidoresRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
+  '/jogadores/$id': typeof JogadoresIdRoute
   '/servidores/$slug': typeof ServidoresSlugRoute
   '/servidores/': typeof ServidoresIndexRoute
   '/api/public/mp-webhook': typeof ApiPublicMpWebhookRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/reportar'
     | '/servidores'
     | '/admin/pedidos'
+    | '/jogadores/$id'
     | '/servidores/$slug'
     | '/servidores/'
     | '/api/public/mp-webhook'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/regras'
     | '/reportar'
     | '/admin/pedidos'
+    | '/jogadores/$id'
     | '/servidores/$slug'
     | '/servidores'
     | '/api/public/mp-webhook'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/reportar'
     | '/servidores'
     | '/admin/pedidos'
+    | '/jogadores/$id'
     | '/servidores/$slug'
     | '/servidores/'
     | '/api/public/mp-webhook'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   RegrasRoute: typeof RegrasRoute
   ReportarRoute: typeof ReportarRoute
   ServidoresRoute: typeof ServidoresRouteWithChildren
+  JogadoresIdRoute: typeof JogadoresIdRoute
   ApiPublicMpWebhookRoute: typeof ApiPublicMpWebhookRoute
 }
 
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServidoresSlugRouteImport
       parentRoute: typeof ServidoresRoute
     }
+    '/jogadores/$id': {
+      id: '/jogadores/$id'
+      path: '/jogadores/$id'
+      fullPath: '/jogadores/$id'
+      preLoaderRoute: typeof JogadoresIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/pedidos': {
       id: '/admin/pedidos'
       path: '/pedidos'
@@ -324,8 +344,19 @@ const rootRouteChildren: RootRouteChildren = {
   RegrasRoute: RegrasRoute,
   ReportarRoute: ReportarRoute,
   ServidoresRoute: ServidoresRouteWithChildren,
+  JogadoresIdRoute: JogadoresIdRoute,
   ApiPublicMpWebhookRoute: ApiPublicMpWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
