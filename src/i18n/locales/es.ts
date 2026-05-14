@@ -77,6 +77,7 @@ export default {
     newUsersHint: "Pasa el cursor para pausar",
     heroVideoEnable: "Activar video",
     heroVideoDisable: "Desactivar video",
+    newUsersLoadMore: "Cargar más",
     newsEyebrow: "Mantente al día",
     newsTitle: "Noticias y Actualizaciones",
     pinned: "Fijada",
