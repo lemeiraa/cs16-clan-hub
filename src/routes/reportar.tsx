@@ -70,6 +70,9 @@ function ReportarPage() {
       return;
     }
 
+    // Abre a janela ANTES de qualquer await (senão o navegador bloqueia)
+    const waWindow = window.open("about:blank", "_blank");
+
     setSubmitting(true);
     let videoUrl = "";
     try {
