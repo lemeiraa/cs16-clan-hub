@@ -45,7 +45,8 @@ function Index() {
           backgroundPosition: "center",
         }}
       >
-        <div className="container mx-auto px-4 py-20 md:py-32 text-center">
+        <HeroVideo />
+        <div className="container mx-auto px-4 py-20 md:py-32 text-center relative">
           <p className="text-xs uppercase tracking-[0.4em] text-accent mb-4 font-semibold">
             {t("home.eyebrow")}
           </p>
