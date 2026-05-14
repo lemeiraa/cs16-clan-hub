@@ -43,6 +43,11 @@ export default {
     text: "Você não tem permissão para acessar esta área. Esta seção é restrita a administradores.",
     hint: "Se você acredita que isso é um erro, entre em contato com a administração da comunidade.",
     switchAccount: "Trocar de conta",
+    sessionLabel: "Sessão atual",
+    user: "Usuário",
+    role: "Papel",
+    noRole: "sem papel atribuído",
+    notSignedIn: "Você não está autenticado.",
   },
   errorPage: {
     title: "Não foi possível carregar a página",
