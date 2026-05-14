@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, User as UserIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/403")({
   component: ForbiddenPage,
@@ -12,9 +14,51 @@ export const Route = createFileRoute("/403")({
   }),
 });
 
+type SessionInfo = {
+  loading: boolean;
+  signedIn: boolean;
+  email?: string;
+  nick?: string;
+  roles: string[];
+};
+
 function ForbiddenPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const [info, setInfo] = useState<SessionInfo>({
+    loading: true,
+    signedIn: false,
+    roles: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        if (!cancelled) setInfo({ loading: false, signedIn: false, roles: [] });
+        return;
+      }
+      const [{ data: profile }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("nick").eq("id", user.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+      ]);
+      if (cancelled) return;
+      setInfo({
+        loading: false,
+        signedIn: true,
+        email: user.email ?? undefined,
+        nick: profile?.nick ?? undefined,
+        roles: (roles ?? []).map((r: { role: string }) => r.role),
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rolesLabel = info.roles.length > 0 ? info.roles.join(", ") : t("forbidden.noRole");
 
   return (
     <section className="container mx-auto px-4 py-20">
@@ -29,9 +73,37 @@ function ForbiddenPage() {
         <p className="mt-3 text-sm text-muted-foreground">
           {t("forbidden.text")}
         </p>
-        <p className="mt-2 text-xs text-muted-foreground">
+
+        {!info.loading && (
+          <div className="mt-6 rounded-lg border border-border bg-card p-4 text-left">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <UserIcon className="h-3.5 w-3.5" />
+              {t("forbidden.sessionLabel")}
+            </div>
+            {info.signedIn ? (
+              <div className="mt-2 space-y-1 text-sm">
+                <p>
+                  <span className="text-muted-foreground">{t("forbidden.user")}:</span>{" "}
+                  <span className="font-semibold">{info.nick ?? "—"}</span>
+                  {info.email && (
+                    <span className="text-muted-foreground"> ({info.email})</span>
+                  )}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">{t("forbidden.role")}:</span>{" "}
+                  <span className="font-mono font-semibold">{rolesLabel}</span>
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm">{t("forbidden.notSignedIn")}</p>
+            )}
+          </div>
+        )}
+
+        <p className="mt-4 text-xs text-muted-foreground">
           {t("forbidden.hint")}
         </p>
+
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => router.history.back()}

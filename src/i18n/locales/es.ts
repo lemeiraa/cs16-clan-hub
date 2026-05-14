@@ -43,6 +43,11 @@ export default {
     text: "No tienes permiso para acceder a esta área. Esta sección está restringida a los administradores.",
     hint: "Si crees que esto es un error, contacta con la administración de la comunidad.",
     switchAccount: "Cambiar de cuenta",
+    sessionLabel: "Sesión actual",
+    user: "Usuario",
+    role: "Rol",
+    noRole: "sin rol asignado",
+    notSignedIn: "No has iniciado sesión.",
   },
   errorPage: {
     title: "No se pudo cargar la página",
