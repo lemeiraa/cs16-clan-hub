@@ -236,6 +236,51 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          occurred_at: string
+          reported_nick: string
+          reporter_name: string
+          reporter_nick: string
+          status: string
+          user_id: string | null
+          video_path: string | null
+          video_url: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occurred_at: string
+          reported_nick: string
+          reporter_name: string
+          reporter_nick: string
+          status?: string
+          user_id?: string | null
+          video_path?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          reported_nick?: string
+          reporter_name?: string
+          reporter_nick?: string
+          status?: string
+          user_id?: string | null
+          video_path?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       servers: {
         Row: {
           coming_soon: boolean

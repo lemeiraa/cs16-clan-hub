@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, Upload, Loader2, Lock } from "lucide-react";
+import { AlertTriangle, Upload, Loader2, Lock, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/reportar")({
   component: ReportarPage,
@@ -14,13 +14,12 @@ export const Route = createFileRoute("/reportar")({
   }),
 });
 
-type WaAdmin = { id: string; name: string; phone: string };
-
 function ReportarPage() {
   const navigate = useNavigate();
   const [authChecked, setAuthChecked] = useState(false);
   const [authed, setAuthed] = useState(false);
-  const [admins, setAdmins] = useState<WaAdmin[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     nick: "",
@@ -30,31 +29,25 @@ function ReportarPage() {
   });
   const [video, setVideo] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setAuthed(!!data.session);
+      setUserId(data.session?.user.id ?? null);
+      setUserEmail(data.session?.user.email ?? null);
       setAuthChecked(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthed(!!session);
+      setUserId(session?.user.id ?? null);
+      setUserEmail(session?.user.email ?? null);
       setAuthChecked(true);
     });
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
-
-  useEffect(() => {
-    if (!authed) return;
-    supabase
-      .from("whatsapp_admins")
-      .select("id,name,phone")
-      .eq("active", true)
-      .order("sort_order")
-      .then(({ data }) => setAdmins(data ?? []));
-  }, [authed]);
-
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -65,16 +58,14 @@ function ReportarPage() {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    if (!admins.length) {
-      toast.error("Nenhum admin disponível no momento. Tente mais tarde.");
+    if (!userId) {
+      toast.error("Sessão expirada. Faça login novamente.");
       return;
     }
 
-    // Abre a janela ANTES de qualquer await (senão o navegador bloqueia)
-    const waWindow = window.open("about:blank", "_blank");
-
     setSubmitting(true);
     let videoUrl = "";
+    let videoPath = "";
     try {
       if (video) {
         if (video.size > 100 * 1024 * 1024) {
@@ -83,42 +74,35 @@ function ReportarPage() {
           return;
         }
         const ext = video.name.split(".").pop() || "mp4";
-        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const { error } = await supabase.storage.from("reports").upload(path, video, {
+        videoPath = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error } = await supabase.storage.from("reports").upload(videoPath, video, {
           contentType: video.type || "video/mp4",
           upsert: false,
         });
         if (error) throw error;
-        videoUrl = supabase.storage.from("reports").getPublicUrl(path).data.publicUrl;
+        videoUrl = supabase.storage.from("reports").getPublicUrl(videoPath).data.publicUrl;
       }
 
-      const lines = [
-        "🚨 *NOVO REPORT — CS Nostalgia*",
-        "",
-        `*Nome:* ${form.name}`,
-        `*Nick no servidor:* ${form.nick}`,
-        `*Nick reportado:* ${form.reportedNick}`,
-        `*Horário do ocorrido:* ${form.occurredAt}`,
-        form.notes ? `*Observações:* ${form.notes}` : null,
-        videoUrl ? `*Vídeo:* ${videoUrl}` : "*Vídeo:* (não enviado)",
-      ].filter(Boolean).join("\n");
+      const { error: insErr } = await supabase.from("reports").insert({
+        user_id: userId,
+        reporter_name: form.name.trim().slice(0, 120),
+        reporter_nick: form.nick.trim().slice(0, 64),
+        reported_nick: form.reportedNick.trim().slice(0, 64),
+        occurred_at: form.occurredAt.trim().slice(0, 120),
+        notes: form.notes.trim().slice(0, 2000) || null,
+        video_url: videoUrl || null,
+        video_path: videoPath || null,
+        contact_email: userEmail,
+      });
+      if (insErr) throw insErr;
 
-      const text = encodeURIComponent(lines);
-      const phone = admins[0].phone.replace(/\D/g, "");
-      const waUrl = `https://wa.me/${phone}?text=${text}`;
-      toast.success("Abrindo WhatsApp com o report...");
+      toast.success("Denúncia registrada! Os admins serão notificados.");
       setForm({ name: "", nick: "", reportedNick: "", occurredAt: "", notes: "" });
       setVideo(null);
-      if (waWindow && !waWindow.closed) {
-        waWindow.location.href = waUrl;
-      } else {
-        // Fallback caso o popup tenha sido bloqueado
-        window.location.href = waUrl;
-      }
+      setSent(true);
     } catch (err) {
-      if (waWindow && !waWindow.closed) waWindow.close();
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Erro ao preparar report.");
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar denúncia.");
     } finally {
       setSubmitting(false);
     }
@@ -158,6 +142,33 @@ function ReportarPage() {
     );
   }
 
+  if (sent) {
+    return (
+      <section className="container mx-auto px-4 py-16 max-w-xl text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-accent" />
+        <h1 className="font-display text-3xl font-bold mt-4">Denúncia enviada</h1>
+        <p className="text-muted-foreground mt-2">
+          Sua denúncia foi registrada no painel administrativo. Nossa equipe irá analisar e tomar as
+          providências necessárias.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={() => setSent(false)}
+            className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
+          >
+            Enviar outra denúncia
+          </button>
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-secondary transition"
+          >
+            Voltar ao início
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="container mx-auto px-4 py-12 max-w-3xl">
       <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Comunidade</p>
@@ -165,8 +176,8 @@ function ReportarPage() {
         <AlertTriangle className="text-accent" /> Reportar
       </h1>
       <p className="text-muted-foreground mt-2">
-        Denuncie jogadores trapaceando ou abusos de administradores. Sua denúncia será enviada
-        diretamente ao admin responsável via WhatsApp.
+        Denuncie jogadores trapaceando ou abusos de administradores. Sua denúncia será registrada
+        no painel dos administradores e analisada pela equipe.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
@@ -207,12 +218,11 @@ function ReportarPage() {
           disabled={submitting}
           className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition disabled:opacity-50"
         >
-          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : "Enviar report via WhatsApp"}
+          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : "Enviar denúncia"}
         </button>
 
         <p className="text-xs text-muted-foreground text-center">
-          Ao enviar, uma janela do WhatsApp será aberta com sua denúncia já preenchida.
-          Toque em <strong>enviar</strong> no WhatsApp para concluir.
+          Sua denúncia será analisada pela equipe administrativa.
         </p>
       </form>
     </section>
