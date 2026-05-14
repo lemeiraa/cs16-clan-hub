@@ -18,23 +18,33 @@ export type PublicProfile = {
   memberNumber: number;
 };
 
-export const getRecentUsers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<RecentUser[]> => {
-    const { data, error } = await supabaseAdmin
+export const getRecentUsers = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(50).optional(),
+        offset: z.number().int().min(0).max(2000).optional(),
+      })
+      .optional()
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data }): Promise<RecentUser[]> => {
+    const limit = data?.limit ?? 20;
+    const offset = data?.offset ?? 0;
+    const { data: rows, error } = await supabaseAdmin
       .from("profiles")
       .select("id, nick, avatar_url, created_at")
       .eq("banned", false)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .range(offset, offset + limit - 1);
     if (error) throw new Error(error.message);
-    return (data ?? []).map((u) => ({
+    return (rows ?? []).map((u) => ({
       id: u.id,
       nick: u.nick ?? "player",
       avatar_url: u.avatar_url,
       created_at: u.created_at,
     }));
-  },
-);
+  });
 
 export const getPublicProfile = createServerFn({ method: "GET" })
   .inputValidator((input) =>
