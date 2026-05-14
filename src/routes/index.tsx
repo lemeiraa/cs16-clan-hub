@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ServerCard } from "@/components/server-card";
+import { RecentUsersMarquee } from "@/components/recent-users-marquee";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +70,8 @@ function Index() {
           </div>
         </div>
       </section>
+
+      <RecentUsersMarquee />
 
       <section className="container mx-auto px-4 py-16">
         <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
