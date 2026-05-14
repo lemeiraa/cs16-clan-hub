@@ -27,8 +27,7 @@ export const Route = createFileRoute("/admin")({
       .eq("role", "admin")
       .maybeSingle();
     if (!role) {
-      toast.error("Acesso restrito a administradores");
-      throw redirect({ to: "/" });
+      throw redirect({ to: "/403" });
     }
   },
 });
