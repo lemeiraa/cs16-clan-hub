@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 type Props = { server: ServerInfo; compact?: boolean };
 
 export function ServerCard({ server, compact = false }: Props) {
+  const { t } = useTranslation();
   const fetchStatus = useServerFn(getServerStatus);
   const [copied, setCopied] = useState(false);
 
@@ -30,13 +31,13 @@ export function ServerCard({ server, compact = false }: Props) {
   const onCopy = async () => {
     await navigator.clipboard.writeText(serverAddress(server));
     setCopied(true);
-    toast.success("IP copiado!", { description: serverAddress(server) });
+    toast.success(t("card.ipCopied"), { description: serverAddress(server) });
     setTimeout(() => setCopied(false), 1500);
   };
 
   const online = status?.online && !server.comingSoon;
   const playersTxt = server.comingSoon
-    ? "Em breve"
+    ? t("common.comingSoon")
     : isLoading
       ? "..."
       : `${status?.players ?? 0}/${status?.maxPlayers ?? 0}`;
@@ -106,7 +107,7 @@ export function ServerCard({ server, compact = false }: Props) {
           </div>
           {server.comingSoon ? (
             <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md bg-warning/90 text-warning-foreground backdrop-blur-sm">
-              Em breve
+              {t("common.comingSoon")}
             </span>
           ) : (
             <span
@@ -123,7 +124,7 @@ export function ServerCard({ server, compact = false }: Props) {
                   online ? "bg-success-foreground animate-pulse" : "bg-destructive-foreground",
                 )}
               />
-              {online ? "Online" : "Offline"}
+              {online ? t("common.online") : t("common.offline")}
             </span>
           )}
         </div>
@@ -132,7 +133,7 @@ export function ServerCard({ server, compact = false }: Props) {
         {!server.comingSoon && mapName && (
           <div className="absolute inset-x-0 bottom-0 p-3 z-10">
             <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-bold drop-shadow">
-              Mapa atual
+              {t("servers.currentMap")}
             </p>
             <p className="font-display text-xl font-bold text-foreground leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               {mapName}
@@ -157,7 +158,7 @@ export function ServerCard({ server, compact = false }: Props) {
           <div className="rounded-lg border border-border bg-secondary/40 p-3">
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
               <Users className="h-3.5 w-3.5 text-accent" />
-              Jogadores
+              {t("servers.playersLabel")}
             </div>
             <p className="font-display text-xl font-bold text-foreground mt-1 tabular-nums">
               {playersTxt}
@@ -166,7 +167,7 @@ export function ServerCard({ server, compact = false }: Props) {
           <div className="rounded-lg border border-border bg-secondary/40 p-3 min-w-0">
             <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
               <MapPin className="h-3.5 w-3.5 text-accent" />
-              Mapa
+              {t("servers.mapLabel")}
             </div>
             <p className="font-display text-xl font-bold text-foreground mt-1 truncate">
               {server.comingSoon ? "—" : mapName ?? "—"}
@@ -183,7 +184,7 @@ export function ServerCard({ server, compact = false }: Props) {
             <button
               onClick={onCopy}
               className="p-1 hover:text-accent transition"
-              aria-label="Copiar IP"
+              aria-label={t("card.copyIp")}
             >
               {copied ? (
                 <Check className="h-4 w-4 text-success" />
@@ -200,14 +201,14 @@ export function ServerCard({ server, compact = false }: Props) {
             params={{ slug: server.slug }}
             className="flex-1 px-3 py-2 text-sm font-semibold uppercase tracking-wider rounded-md border border-border hover:bg-secondary text-center transition"
           >
-            Detalhes
+            {t("card.details")}
           </Link>
           {!server.comingSoon && (
             <a
               href={steamConnectUrl(server)}
               className="flex-1 px-3 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center hover:opacity-90 transition shadow-glow"
             >
-              Conectar
+              {t("card.connect")}
             </a>
           )}
         </div>
