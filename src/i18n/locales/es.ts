@@ -75,6 +75,8 @@ export default {
     newUsersEyebrow: "Comunidad creciendo",
     newUsersTitle: "Nuevos jugadores",
     newUsersHint: "Pasa el cursor para pausar",
+    heroVideoEnable: "Activar video",
+    heroVideoDisable: "Desactivar video",
     newsEyebrow: "Mantente al día",
     newsTitle: "Noticias y Actualizaciones",
     pinned: "Fijada",
