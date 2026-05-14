@@ -238,6 +238,16 @@ export default {
     pwdShortText: "Mínimo de 6 caracteres.",
     avatarUpdated: "¡Avatar actualizado!",
   },
+  player: {
+    publicProfile: "Perfil público",
+    member: "Miembro",
+    memberSince: "Miembro desde",
+    memberNumber: "Miembro Nº",
+    daysInCommunity: "Días en la comunidad",
+    privacyNote: "Solo se muestra información pública. El correo y los datos de contacto permanecen privados.",
+    notFoundTitle: "Jugador no encontrado",
+    notFoundText: "Este perfil no existe, fue eliminado o no está disponible.",
+  },
   langSwitcher: {
     label: "Idioma",
     pt: "Português",
