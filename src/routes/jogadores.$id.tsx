@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { Calendar, Hash, Shield, ShieldCheck, User as UserIcon } from "lucide-react";
 import { getPublicProfile } from "@/lib/users.functions";
+import { csAvatarFor } from "@/lib/cs-avatars";
 
 export const Route = createFileRoute("/jogadores/$id")({
   component: PlayerPage,
@@ -94,17 +95,32 @@ function PlayerPage() {
         <div className="mt-4 rounded-2xl border border-border bg-card overflow-hidden shadow-card">
           <div className="bg-gradient-brand h-24" />
           <div className="px-6 pb-6 -mt-12">
-            {profile.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt={profile.nick}
-                className="h-24 w-24 rounded-full object-cover border-4 border-card bg-card"
-              />
-            ) : (
-              <div className="h-24 w-24 rounded-full border-4 border-card bg-gradient-brand text-brand-foreground flex items-center justify-center text-2xl font-bold">
-                {initials(profile.nick)}
-              </div>
-            )}
+            {(() => {
+              const av = csAvatarFor(profile.id);
+              const src = profile.avatar_url ?? av.src;
+              return (
+                <div className="relative inline-block">
+                  <img
+                    src={src}
+                    alt={profile.nick}
+                    className="h-24 w-24 rounded-full object-cover border-4 border-card bg-card"
+                    width={96}
+                    height={96}
+                  />
+                  {!profile.avatar_url && (
+                    <span
+                      className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border-2 border-card ${
+                        av.side === "CT"
+                          ? "bg-blue-600 text-white"
+                          : "bg-amber-600 text-white"
+                      }`}
+                    >
+                      {av.side} · {av.name}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="mt-4 flex items-start justify-between gap-3 flex-wrap">
               <div>
