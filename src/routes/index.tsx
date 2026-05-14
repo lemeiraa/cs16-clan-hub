@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ServerCard } from "@/components/server-card";
 import { RecentUsersMarquee } from "@/components/recent-users-marquee";
+import { HeroVideo } from "@/components/hero-video";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +45,8 @@ function Index() {
           backgroundPosition: "center",
         }}
       >
-        <div className="container mx-auto px-4 py-20 md:py-32 text-center">
+        <HeroVideo />
+        <div className="container mx-auto px-4 py-20 md:py-32 text-center relative">
           <p className="text-xs uppercase tracking-[0.4em] text-accent mb-4 font-semibold">
             {t("home.eyebrow")}
           </p>
