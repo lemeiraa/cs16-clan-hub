@@ -22,6 +22,10 @@ function formatRelative(iso: string, lang: string) {
 }
 
 function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
+  const fallback = csAvatarFor(user.id);
+  const hasCustomAvatar =
+    typeof user.avatar_url === "string" && user.avatar_url.trim().length > 0;
+  const initialSrc = hasCustomAvatar ? (user.avatar_url as string) : fallback.src;
   return (
     <Link
       to="/jogadores/$id"
@@ -29,13 +33,25 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
       className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0 hover:border-accent hover:bg-card transition"
     >
       <img
-        src={user.avatar_url ?? csAvatarFor(user.id).src}
-        alt={user.nick}
+        src={initialSrc}
+        alt={`${user.nick} — ${fallback.side} ${fallback.name}`}
         className="h-8 w-8 rounded-full object-cover border border-border bg-card"
         loading="lazy"
         width={32}
         height={32}
+        onError={(e) => {
+          const img = e.currentTarget;
+          if (img.src !== fallback.src) img.src = fallback.src;
+        }}
       />
+      <span
+        className={`text-[8px] font-bold uppercase px-1 rounded-sm ${
+          fallback.side === "CT" ? "bg-blue-600 text-white" : "bg-amber-600 text-white"
+        }`}
+        aria-hidden
+      >
+        {fallback.side}
+      </span>
       <div className="leading-tight">
         <p className="text-sm font-semibold">{user.nick}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
