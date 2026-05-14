@@ -2,18 +2,21 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import logo from "@/assets/logo-csnostalgia.jpg";
 import { Menu, X, Shield, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarUrlFor } from "@/lib/avatars";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-const NAV = [
-  { to: "/", label: "Home" },
-  { to: "/servidores", label: "Servidores" },
-  { to: "/loja", label: "Loja" },
-  { to: "/regras", label: "Regras" },
-  { to: "/reportar", label: "Reportar" },
+const NAV_KEYS = [
+  { to: "/", key: "home" },
+  { to: "/servidores", key: "servers" },
+  { to: "/loja", key: "shop" },
+  { to: "/regras", key: "rules" },
+  { to: "/reportar", key: "report" },
 ] as const;
 
 export function SiteHeader() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState<{ id: string; nick: string | null; avatar_url: string | null; email: string } | null>(null);
@@ -59,7 +62,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {NAV.map((n) => {
+          {NAV_KEYS.map((n) => {
             const active =
               n.to === "/" ? path === "/" : path.startsWith(n.to);
             return (
@@ -73,15 +76,18 @@ export function SiteHeader() {
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50")
                 }
               >
-                {n.label}
+                {t(`nav.${n.key}` as const)}
               </Link>
             );
           })}
           {isAdmin && (
             <Link to="/admin" className="ml-2 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border border-accent text-accent hover:bg-accent/10 transition inline-flex items-center gap-1">
-              <Shield className="h-3.5 w-3.5" /> Admin
+              <Shield className="h-3.5 w-3.5" /> {t("nav.admin")}
             </Link>
           )}
+          <div className="ml-2">
+            <LanguageSwitcher />
+          </div>
           {user ? (
             <Link
               to="/conta"
@@ -92,38 +98,41 @@ export function SiteHeader() {
                 alt=""
                 className="h-7 w-7 rounded-md bg-card"
               />
-              <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || "Conta"}</span>
+              <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || t("nav.account")}</span>
             </Link>
           ) : (
             <Link
               to="/auth"
               className="ml-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
             >
-              Entrar
+              {t("nav.login")}
             </Link>
           )}
         </nav>
 
-        <button
-          className="md:hidden p-2 text-foreground"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Menu"
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <LanguageSwitcher compact />
+          <button
+            className="p-2 text-foreground"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Menu"
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {open && (
         <div className="md:hidden border-t border-border/60 bg-background">
           <div className="container mx-auto flex flex-col px-4 py-3 gap-1">
-            {NAV.map((n) => (
+            {NAV_KEYS.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
                 className="px-3 py-3 text-sm uppercase tracking-wider rounded-md hover:bg-secondary"
               >
-                {n.label}
+                {t(`nav.${n.key}` as const)}
               </Link>
             ))}
             {user ? (
@@ -132,7 +141,7 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
                 className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md border border-border text-center mt-2 inline-flex items-center justify-center gap-2"
               >
-                <UserIcon className="h-4 w-4" /> {user.nick || "Minha conta"}
+                <UserIcon className="h-4 w-4" /> {user.nick || t("nav.account")}
               </Link>
             ) : (
               <Link
@@ -140,7 +149,7 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
                 className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center mt-2"
               >
-                Entrar
+                {t("nav.login")}
               </Link>
             )}
           </div>
@@ -151,6 +160,7 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const { t } = useTranslation();
   return (
     <footer className="border-t border-border/60 bg-card/40 mt-20">
       <div className="container mx-auto px-4 py-10 grid gap-8 md:grid-cols-3 text-sm">
@@ -159,26 +169,21 @@ export function SiteFooter() {
             <img src={logo} alt="" className="h-10 w-10 rounded-md" />
             <div>
               <p className="font-display text-lg font-bold">CS NOSTALGIA</p>
-              <p className="text-xs text-muted-foreground">
-                Counter-Strike 1.6 — desde sempre
-              </p>
+              <p className="text-xs text-muted-foreground">{t("footer.tagline")}</p>
             </div>
           </div>
-          <p className="mt-4 text-muted-foreground max-w-sm">
-            Comunidade de servidores brasileiros e venezuelanos de CS 1.6.
-            Reviva o clássico com a galera.
-          </p>
+          <p className="mt-4 text-muted-foreground max-w-sm">{t("footer.about")}</p>
         </div>
 
         <div>
           <p className="font-display uppercase tracking-wider text-foreground mb-3">
-            Navegação
+            {t("footer.nav")}
           </p>
           <ul className="space-y-2 text-muted-foreground">
-            {NAV.map((n) => (
+            {NAV_KEYS.map((n) => (
               <li key={n.to}>
                 <Link to={n.to} className="hover:text-foreground transition">
-                  {n.label}
+                  {t(`nav.${n.key}` as const)}
                 </Link>
               </li>
             ))}
@@ -187,16 +192,13 @@ export function SiteFooter() {
 
         <div>
           <p className="font-display uppercase tracking-wider text-foreground mb-3">
-            Contato
+            {t("footer.contact")}
           </p>
-          <p className="text-muted-foreground">
-            Dúvidas sobre VIP, Ammo Packs ou banimento? Fale com a admin
-            através do nosso Discord ou pelos canais da comunidade.
-          </p>
+          <p className="text-muted-foreground">{t("footer.contactText")}</p>
         </div>
       </div>
       <div className="border-t border-border/60 py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} CS Nostalgia — Todos os direitos reservados.
+        © {new Date().getFullYear()} CS Nostalgia — {t("footer.rights")}
       </div>
     </footer>
   );

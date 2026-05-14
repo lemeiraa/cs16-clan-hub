@@ -7,29 +7,34 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
 import { ScrollToTop } from "@/components/scroll-to-top";
+import "@/i18n";
+import { changeLang, hasUserChosen, type Lang, SUPPORTED } from "@/i18n";
+import { getSuggestedLocale } from "@/lib/geo.functions";
 
 function NotFoundComponent() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-md text-center">
           <h1 className="font-display text-7xl font-bold text-gradient">404</h1>
-          <h2 className="mt-4 text-xl font-semibold">Página não encontrada</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            A página que você procura não existe ou foi movida.
-          </p>
+          <h2 className="mt-4 text-xl font-semibold">{t("notFound.title")}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t("notFound.text")}</p>
           <div className="mt-6">
             <Link
               to="/"
               className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 transition"
             >
-              Voltar ao início
+              {t("common.backHome")}
             </Link>
           </div>
         </div>
@@ -42,11 +47,12 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Não foi possível carregar a página
+          {t("errorPage.title")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -57,13 +63,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition"
           >
-            Tentar novamente
+            {t("common.retry")}
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition"
           >
-            Início
+            {t("nav.home")}
           </a>
         </div>
       </div>
@@ -132,6 +138,23 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const detectLocale = useServerFn(getSuggestedLocale);
+
+  // On first visit (no saved preference), auto-detect language by IP location
+  useEffect(() => {
+    if (hasUserChosen()) return;
+    let cancelled = false;
+    detectLocale()
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.locale && SUPPORTED.includes(res.locale as Lang)) {
+          changeLang(res.locale as Lang, false);
+        }
+      })
+      .catch(() => { /* keep default */ });
+    return () => { cancelled = true; };
+  }, [detectLocale]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen flex flex-col scanline">
