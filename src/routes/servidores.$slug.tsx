@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Copy, Check, Users, MapPin, ExternalLink } from "lucide-react";
 import type { ServerInfo } from "@/lib/servers";
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/servidores/$slug")({
 });
 
 function ServerDetail() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === "en" ? "en-US" : i18n.language === "es" ? "es-ES" : "pt-BR";
   const { slug } = Route.useParams();
   const { data: server, isLoading: loadingServer } = useQuery({
     queryKey: ["server", slug],
@@ -48,7 +51,7 @@ function ServerDetail() {
   if (loadingServer) {
     return (
       <section className="container mx-auto px-4 py-10">
-        <p className="text-muted-foreground">Carregando servidor...</p>
+        <p className="text-muted-foreground">{t("servers.loadingServer")}</p>
       </section>
     );
   }
@@ -60,7 +63,7 @@ function ServerDetail() {
   const onCopy = async () => {
     await navigator.clipboard.writeText(serverAddress(srv));
     setCopied(true);
-    toast.success("IP copiado!");
+    toast.success(t("card.ipCopied"));
     setTimeout(() => setCopied(false), 1500);
   };
 
@@ -71,7 +74,7 @@ function ServerDetail() {
         to="/servidores"
         className="text-sm text-muted-foreground hover:text-foreground transition"
       >
-        ← Todos os servidores
+        {t("servers.backAll")}
       </Link>
 
       <header className="mt-4 flex flex-wrap items-start justify-between gap-4">
@@ -107,7 +110,7 @@ function ServerDetail() {
               href={steamConnectUrl(srv)}
               className="px-4 py-3 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground text-center shadow-glow hover:opacity-90 transition"
             >
-              Conectar via Steam
+              {t("servers.connectSteam")}
             </a>
           </div>
         )}
@@ -121,21 +124,21 @@ function ServerDetail() {
                 <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", isFetching ? "animate-ping bg-success" : "bg-success/60")} />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
               </span>
-              <span className="uppercase tracking-wider font-semibold">Ao vivo</span>
+              <span className="uppercase tracking-wider font-semibold">{t("servers.liveLabel")}</span>
               {dataUpdatedAt > 0 && (
-                <span>· atualizado {new Date(dataUpdatedAt).toLocaleTimeString("pt-BR")}</span>
+                <span>· {t("servers.updatedAt")} {new Date(dataUpdatedAt).toLocaleTimeString(dateLocale)}</span>
               )}
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-3 mt-3">
             <StatCard
-              label="Status"
-              value={status?.online ? "Online" : isLoading ? "..." : "Offline"}
+              label={t("servers.statusLabel")}
+              value={status?.online ? t("common.online") : isLoading ? "..." : t("common.offline")}
               tone={status?.online ? "success" : "destructive"}
             />
             <StatCard
               icon={<Users className="h-5 w-5" />}
-              label="Jogadores"
+              label={t("servers.playersLabel")}
               value={
                 isLoading
                   ? "..."
@@ -144,7 +147,7 @@ function ServerDetail() {
             />
             <StatCard
               icon={<MapPin className="h-5 w-5" />}
-              label="Mapa"
+              label={t("servers.mapLabel")}
               value={isLoading ? "..." : status?.map ?? "—"}
             />
           </div>
@@ -154,10 +157,10 @@ function ServerDetail() {
       <div className="mt-10 border-b border-border flex flex-wrap gap-1">
         {(
           [
-            ["players", "Jogadores online"],
-            ["ranking", "Top Ranking"],
-            ["comandos", "Comandos"],
-            ["regras", "Regras"],
+            ["players", t("servers.tabs.players")],
+            ["ranking", t("servers.tabs.ranking")],
+            ["comandos", t("servers.tabs.commands")],
+            ["regras", t("servers.tabs.rules")],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -178,7 +181,7 @@ function ServerDetail() {
       <div className="mt-6">
         {srv.comingSoon && (
           <p className="text-muted-foreground">
-            Este servidor estará disponível em breve. Fique de olho!
+            {t("servers.comingSoonText")}
           </p>
         )}
         {!srv.comingSoon && tab === "players" && (
@@ -198,7 +201,7 @@ function ServerDetail() {
           rel="noopener noreferrer"
           className="mt-8 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-accent"
         >
-          Ver no GameTracker <ExternalLink className="h-3 w-3" />
+          {t("servers.seeGameTracker")} <ExternalLink className="h-3 w-3" />
 
         </a>
       )}
@@ -243,11 +246,12 @@ function PlayersTable({
   players: { name: string; score: number; timeMinutes: number }[];
   loading?: boolean;
 }) {
-  if (loading) return <p className="text-muted-foreground">Carregando...</p>;
+  const { t } = useTranslation();
+  if (loading) return <p className="text-muted-foreground">{t("common.loading")}</p>;
   if (!players.length)
     return (
       <p className="text-muted-foreground">
-        Nenhum jogador conectado no momento.
+        {t("servers.noPlayers")}
       </p>
     );
   return (
@@ -255,9 +259,9 @@ function PlayersTable({
       <table className="w-full text-sm">
         <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
           <tr>
-            <th className="px-4 py-2 text-left">Jogador</th>
-            <th className="px-4 py-2 text-right">Score</th>
-            <th className="px-4 py-2 text-right">Tempo</th>
+            <th className="px-4 py-2 text-left">{t("servers.table.player")}</th>
+            <th className="px-4 py-2 text-right">{t("servers.table.score")}</th>
+            <th className="px-4 py-2 text-right">{t("servers.table.time")}</th>
           </tr>
         </thead>
         <tbody>
@@ -284,11 +288,12 @@ function RankingTable({
   players: { rank: number; name: string; score: number; timeHours: number }[];
   loading?: boolean;
 }) {
-  if (loading) return <p className="text-muted-foreground">Carregando...</p>;
+  const { t } = useTranslation();
+  if (loading) return <p className="text-muted-foreground">{t("common.loading")}</p>;
   if (!players.length)
     return (
       <p className="text-muted-foreground">
-        Ranking não disponível no momento.
+        {t("servers.noRanking")}
       </p>
     );
   const rankStyle = (rank: number) => {
@@ -321,9 +326,9 @@ function RankingTable({
         <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
           <tr>
             <th className="px-4 py-2 text-left w-20">#</th>
-            <th className="px-4 py-2 text-left">Jogador</th>
-            <th className="px-4 py-2 text-right">Pontuação</th>
-            <th className="px-4 py-2 text-right">Horas</th>
+            <th className="px-4 py-2 text-left">{t("servers.table.player")}</th>
+            <th className="px-4 py-2 text-right">{t("servers.table.points")}</th>
+            <th className="px-4 py-2 text-right">{t("servers.table.hours")}</th>
           </tr>
         </thead>
         <tbody>
@@ -356,8 +361,9 @@ function RankingTable({
 }
 
 function CommandsList({ server }: { server: ServerInfo }) {
+  const { t } = useTranslation();
   if (!server?.commands?.length)
-    return <p className="text-muted-foreground">Sem comandos cadastrados.</p>;
+    return <p className="text-muted-foreground">{t("servers.noCommands")}</p>;
   return (
     <div className="grid gap-2 md:grid-cols-2">
       {server.commands.map((c) => (
@@ -374,8 +380,9 @@ function CommandsList({ server }: { server: ServerInfo }) {
 }
 
 function RulesList({ server }: { server: ServerInfo }) {
+  const { t } = useTranslation();
   if (!server?.rules?.length)
-    return <p className="text-muted-foreground">Sem regras cadastradas.</p>;
+    return <p className="text-muted-foreground">{t("servers.noRules")}</p>;
   return (
     <ol className="space-y-2 list-decimal list-inside">
       {server.rules.map((r, i) => (
