@@ -1,110 +1,85 @@
-# Plano — Site CS Nostalgia
+## Objetivo
 
-## Visão geral
-Site institucional + portal de servidores Counter-Strike 1.6 em tons de azul/branco (paleta do logo), com dados ao vivo via scraping do GameTracker, loja de cargos VIP e Ammo Packs com pagamento via PIX/Mercado Pago, e entrega manual pelo admin.
+Adicionar tradução do site em **Português (padrão)**, **Inglês** e **Espanhol**, com:
+- Detecção automática do idioma pela localização do IP na primeira visita
+- Seletor manual de idioma no header (🇧🇷 🇺🇸 🇪🇸)
+- Conteúdo dinâmico (notícias, servidores, planos) permanece em português
 
-## Identidade visual
-- Cores: azul profundo do logo (#13428C aprox.) como primário, branco como base, azul-claro de destaque, cinza-escuro para superfícies. Tokens em `src/styles.css` (oklch).
-- Tipografia: display condensada/militar (ex.: Oswald/Bebas) para títulos, Inter para corpo.
-- Logo enviado em `src/assets/logo-csnostalgia.jpg`, usado no header e favicon.
-- Layout escuro opcional (dark default) com acentos em azul vibrante.
+## Stack
 
-## Estrutura de rotas (TanStack Start)
+- `i18next` + `react-i18next` (padrão de mercado, leve, SSR-friendly)
+- Detecção de país via header `cf-ipcountry` (Cloudflare Workers já disponibiliza) através de um `createServerFn`
+- Persistência da escolha manual em `localStorage`
+
+## Mapeamento país → idioma
+
+- `pt` (padrão): BR, PT, AO, MZ, CV, GW, ST, TL → ou qualquer país não mapeado
+- `es`: ES, MX, AR, CL, CO, PE, VE, UY, PY, BO, EC, CR, PA, DO, GT, HN, NI, SV, CU, PR
+- `en`: US, GB, CA, AU, NZ, IE, ZA, IN, SG, e demais países anglófonos
+
+## Arquivos novos
+
 ```
-src/routes/
-  __root.tsx              header + footer compartilhados
-  index.tsx               home: hero, grid dos 7 servidores com players/mapa ao vivo
-  servidores.tsx          listagem completa
-  servidores.$slug.tsx    página individual de cada servidor
-  loja.tsx                planos VIP/ADMIN/MASTER/SUPREMO + Ammo Packs (ZP)
-  loja.checkout.tsx       confirmação + geração do PIX
-  loja.sucesso.tsx        instruções pós-pagamento
-  regras.tsx              regras gerais
-  api/public/
-    gametracker.$slug.ts  scraping cacheado
-    mp-webhook.ts         webhook Mercado Pago (assinatura validada)
+src/i18n/
+  index.ts              # init do i18next
+  locales/
+    pt.json             # traduções PT (base)
+    en.json             # traduções EN
+    es.json             # traduções ES
+src/lib/geo.functions.ts # createServerFn que lê cf-ipcountry e devolve idioma sugerido
+src/components/language-switcher.tsx
 ```
 
-Servidores (slug → ip:porta):
-- `4fun-brasil` → 131.196.196.196:27550
-- `fypoolday-brasil` → 131.196.196.197:27230
-- `zombie-plague-brasil` → 131.196.196.198:27880
-- `zombie-plague-venezuela` → 161.129.183.128:27016
-- `pregame-venezuela` → 161.129.183.128:27015
-- `zombie-escape` → "Em breve"
-- `crossfire` → "Em breve"
+## Arquivos modificados
 
-## Página individual do servidor
-- Header: nome, bandeira, IP com botão "copiar" e botão `steam://connect/IP:PORT`.
-- Card ao vivo: players online (X/Y), mapa atual, uptime, ping (do GameTracker).
-- Tabela de jogadores conectados (nome, score, tempo) extraída do GameTracker.
-- Top ranking (top 50) via página `/top_players` do GameTracker.
-- Aba "Comandos" e "Regras" (conteúdo estático específico por servidor; ZP terá seção de Ammo Packs).
-- Embed/link para o GameTracker original como fallback.
+- `src/router.tsx` ou `src/routes/__root.tsx`: importar `i18n` para inicializar; chamar `geo.functions` no `beforeLoad` da rota raiz para definir idioma inicial quando não há preferência salva
+- `src/components/site-chrome.tsx`: integrar `LanguageSwitcher` no header (desktop + mobile) e trocar strings fixas (nav, footer) por `t('...')`
+- Todas as rotas/páginas com texto hardcoded em PT — substituir por `t('chave')`:
+  - `src/routes/index.tsx` (home)
+  - `src/routes/servidores.index.tsx`, `servidores.$slug.tsx`, `servidores.tsx`
+  - `src/routes/loja.tsx`
+  - `src/routes/regras.tsx`
+  - `src/routes/reportar.tsx`
+  - `src/routes/auth.tsx`
+  - `src/routes/conta.tsx`
+  - `src/routes/admin.tsx`, `src/routes/admin.pedidos.tsx`
+  - `src/components/server-card.tsx` e demais componentes com texto fixo
 
-## Dados ao vivo (scraping GameTracker)
-- Server function `getServerStatus(slug)` em `src/lib/gametracker.functions.ts`:
-  - faz fetch de `https://www.gametracker.com/server_info/IP:PORT/` e `/top_players/`
-  - parseia HTML (regex/cheerio leve) para: status, mapa, players atuais/máx, lista de jogadores, top ranking
-  - retorna DTO serializável; cacheia em memória 60s (`Cache-Control` na resposta)
-  - tratamento de erro: retorna `{ online: false, error }` sem quebrar UI
-- Frontend usa `@tanstack/react-query` com `refetchInterval: 30s` para refletir mudanças.
-- Importante: scraping pode falhar se o GameTracker mudar HTML — código isolado e com fallback claro ("dados temporariamente indisponíveis").
+## Estrutura das traduções (chaves agrupadas por área)
 
-## Loja
-### Planos (mesma estrutura para todos os servidores aplicáveis)
-Cards com VIP / ADMIN / MASTER / SUPREMO. Você define preços e benefícios depois (vou começar com placeholders editáveis no código). Botão "Comprar via PIX".
+```json
+{
+  "nav": { "home": "Início", "servers": "Servidores", "shop": "Loja", "rules": "Regras", "report": "Reportar", "account": "Conta", "login": "Entrar" },
+  "footer": { "copyright": "...", "tagline": "..." },
+  "home": { "heroTitle": "...", "heroSub": "...", "ctaPlay": "Jogar agora", ... },
+  "servers": { ... },
+  "shop": { ... },
+  "rules": { ... },
+  "report": { "title": "Reportar", "needLogin": "Login necessário", ... },
+  "auth": { ... },
+  "account": { ... },
+  "common": { "loading": "Carregando...", "save": "Salvar", "cancel": "Cancelar", "delete": "Excluir", "back": "Voltar", ... }
+}
+```
 
-### Ammo Packs (Zombie Plague)
-- Slider/input numérico: 1.000 a 500.000 ammo packs, passo 1.000.
-- Cálculo: `R$ 10,00 por 1.000 ammo packs` → `preco = qtd/1000 * 10`.
-- Resumo em tempo real e botão "Comprar via PIX".
+## Fluxo de detecção
 
-### Fluxo de checkout
-1. Usuário preenche: nick no jogo, SteamID (opcional), email/whatsapp para contato.
-2. Server function cria preferência Mercado Pago (PIX) e retorna QR code + copia-e-cola.
-3. Pedido salvo no Lovable Cloud com status `pending`.
-4. Webhook `/api/public/mp-webhook` valida assinatura, marca pedido como `paid` e notifica admin (email via Resend ou apenas painel admin — vou usar painel + email se configurado).
-5. Página `/loja/sucesso` exibe instruções: "Seu pedido foi recebido. Um admin aplicará em até X horas."
-
-### Painel admin (mínimo)
-- Rota `/admin/pedidos` protegida por role `admin` (tabela separada `user_roles`).
-- Lista de pedidos pendentes/pagos com botão "Marcar como entregue".
-
-## Backend (Lovable Cloud)
-Tabelas:
-- `orders` (id, user_email, nick, steamid, server_slug, plan_or_pack, qty, amount_brl, mp_preference_id, status, created_at, delivered_at)
-- `profiles` (id, email, nick)
-- `user_roles` (user_id, role) com função `has_role` (padrão de segurança Lovable)
-
-RLS:
-- `orders`: usuário vê apenas os próprios; admin vê tudo.
-- `user_roles`: somente admin escreve.
-
-## Pagamento — Mercado Pago (PIX)
-- Requer secret runtime `MP_ACCESS_TOKEN` (vou pedir após aprovação do plano).
-- Webhook secret `MP_WEBHOOK_SECRET` para validação HMAC.
-- Server function `createPixPayment(orderId)` chama API `/v1/payments` do MP.
-- Webhook em `/api/public/mp-webhook` valida assinatura `x-signature` antes de processar.
+1. App carrega → `i18n.init` com idioma do `localStorage` se existir
+2. Se não houver, `__root.tsx` chama `getSuggestedLocale()` (server fn) → lê `cf-ipcountry` → devolve `pt|en|es` → aplica via `i18n.changeLanguage()` e salva
+3. Usuário clica no seletor → `i18n.changeLanguage()` + persist em `localStorage`
 
 ## Detalhes técnicos
-- TanStack Start v1 + Vite, Tailwind v4 com tokens semânticos, shadcn/ui.
-- React Query para todas as chamadas ao vivo.
-- Server functions (`createServerFn`) para scraping e MP; rotas server (`/api/public/*`) só para webhook.
-- Scraping com `fetch` + parser leve (sem deps Node-only); cache simples em memória do worker.
-- Imagens geradas para o hero (cenário CS clássico em tons de azul).
-- SEO: cada rota com `head()` próprio (title/description/og).
 
-## O que precisarei depois da aprovação
-1. Você confirma os preços de VIP/ADMIN/MASTER/SUPREMO (ou usamos placeholders e você edita).
-2. Você cria sua aplicação no Mercado Pago e me passa via formulário de secret: `MP_ACCESS_TOKEN` e `MP_WEBHOOK_SECRET`.
-3. Habilitar Lovable Cloud (faço na primeira etapa de implementação).
-4. Você cria a primeira conta admin (te ajudo a promover via SQL após signup).
+- O `i18next` é importado uma única vez em `src/i18n/index.ts` que faz `i18n.use(initReactI18next).init({ resources: { pt, en, es }, lng: 'pt', fallbackLng: 'pt', interpolation: { escapeValue: false } })`
+- A server fn lê `getRequestHeader('cf-ipcountry')` (Cloudflare Workers expõe automaticamente). Fallback `Accept-Language` se header ausente.
+- Páginas do **admin** ficam só em PT (decisão pragmática — admin é só para a equipe), mas o seletor continua funcional. Posso traduzir também se quiser; só avise.
 
-## Riscos / limitações
-- Scraping do GameTracker pode quebrar se mudarem HTML — fallback exibido.
-- GameTracker pode rate-limitar; cache de 60s mitiga.
-- Entrega manual exige sua ação para aplicar VIP/AP nos servidores.
-- "Em breve" para Zombie Escape e Crossfire — páginas existirão sem dados ao vivo.
+## Escopo de trabalho
 
-Ao aprovar, começo habilitando Lovable Cloud e construindo a base visual + home com dados ao vivo, depois páginas individuais, e por último loja + checkout PIX.
+Esta é uma tarefa **grande** — envolve:
+1. Setup do i18n (~3 arquivos novos)
+2. Server fn de geo + integração no root (~2 arquivos)
+3. Language switcher (~1 arquivo + edição do site-chrome)
+4. Substituir strings em **~15 arquivos** de rotas/componentes
+
+Vai gastar muitas mensagens. Posso entregar tudo, mas confirme se quer que eu siga em frente com este escopo completo (incluindo as páginas de admin, ou apenas frontend público).
