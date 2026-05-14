@@ -38,6 +38,12 @@ export default {
     title: "Página no encontrada",
     text: "La página que buscas no existe o fue movida.",
   },
+  forbidden: {
+    title: "Acceso denegado",
+    text: "No tienes permiso para acceder a esta área. Esta sección está restringida a los administradores.",
+    hint: "Si crees que esto es un error, contacta con la administración de la comunidad.",
+    switchAccount: "Cambiar de cuenta",
+  },
   errorPage: {
     title: "No se pudo cargar la página",
   },

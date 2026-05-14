@@ -38,6 +38,12 @@ export default {
     title: "Page not found",
     text: "The page you are looking for does not exist or has been moved.",
   },
+  forbidden: {
+    title: "Access denied",
+    text: "You don't have permission to access this area. This section is restricted to administrators.",
+    hint: "If you believe this is a mistake, please contact the community admins.",
+    switchAccount: "Switch account",
+  },
   errorPage: {
     title: "Could not load the page",
   },
