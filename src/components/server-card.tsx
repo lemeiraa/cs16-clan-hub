@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
 import { Users, MapPin, Activity, Copy, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
