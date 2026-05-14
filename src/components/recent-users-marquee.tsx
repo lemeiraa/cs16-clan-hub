@@ -67,17 +67,29 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
 export function RecentUsersMarquee() {
   const { t, i18n } = useTranslation();
   const fetchUsers = useServerFn(getRecentUsers);
-  const { data: users = [], isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ["recent-users"],
-    queryFn: () => fetchUsers(),
+    queryFn: ({ pageParam = 0 }) =>
+      fetchUsers({ data: { limit: PAGE_SIZE, offset: pageParam } }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
     staleTime: 60_000,
     refetchInterval: 120_000,
   });
 
+  const users: RecentUser[] = (data?.pages ?? []).flat();
+
   if (!isLoading && users.length === 0) return null;
 
   // Duplicate for seamless infinite loop
-  const loop = [...users, ...users];
+  const loop = users.length > 0 ? [...users, ...users] : [];
 
   return (
     <section className="border-y border-border bg-card/30">
@@ -89,6 +101,11 @@ export function RecentUsersMarquee() {
             </p>
             <h2 className="font-display text-xl md:text-2xl font-bold mt-1">
               {t("home.newUsersTitle")}
+              {users.length > 0 && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
+                  ({users.length})
+                </span>
+              )}
             </h2>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -120,6 +137,24 @@ export function RecentUsersMarquee() {
                 <UserChip key={`${u.id}-${i}`} user={u} lang={i18n.language} />
               ))}
             </div>
+          </div>
+        )}
+
+        {hasNextPage && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 text-xs uppercase tracking-wider font-semibold hover:border-accent hover:bg-card transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isFetchingNextPage && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              {isFetchingNextPage
+                ? t("common.loading")
+                : t("home.newUsersLoadMore")}
+            </button>
           </div>
         )}
       </div>
