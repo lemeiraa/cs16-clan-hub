@@ -43,6 +43,11 @@ export default {
     text: "You don't have permission to access this area. This section is restricted to administrators.",
     hint: "If you believe this is a mistake, please contact the community admins.",
     switchAccount: "Switch account",
+    sessionLabel: "Current session",
+    user: "User",
+    role: "Role",
+    noRole: "no role assigned",
+    notSignedIn: "You are not signed in.",
   },
   errorPage: {
     title: "Could not load the page",
