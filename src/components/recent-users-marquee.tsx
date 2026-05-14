@@ -6,9 +6,6 @@ import { UserPlus } from "lucide-react";
 import { getRecentUsers, type RecentUser } from "@/lib/users.functions";
 import { csAvatarFor } from "@/lib/cs-avatars";
 
-function initials(nick: string) {
-  return nick.trim().slice(0, 2).toUpperCase();
-}
 
 function formatRelative(iso: string, lang: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -34,15 +31,11 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
       <img
         src={user.avatar_url ?? csAvatarFor(user.id).src}
         alt={user.nick}
-        className="h-8 w-8 rounded-full object-cover border border-border"
+        className="h-8 w-8 rounded-full object-cover border border-border bg-card"
         loading="lazy"
         width={32}
         height={32}
       />
-      {!user.avatar_url ? null : null}
-      {(() => null)()}
-      {/* keep initials helper used */}
-      <span className="sr-only">{initials(user.nick)}</span>
       <div className="leading-tight">
         <p className="text-sm font-semibold">{user.nick}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
