@@ -25,7 +25,11 @@ function formatRelative(iso: string, lang: string) {
 
 function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0">
+    <Link
+      to="/jogadores/$id"
+      params={{ id: user.id }}
+      className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0 hover:border-accent hover:bg-card transition"
+    >
       {user.avatar_url ? (
         <img
           src={user.avatar_url}
@@ -44,7 +48,7 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
           {formatRelative(user.created_at, lang)}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
 
