@@ -331,7 +331,7 @@ function NewsSection() {
                 </div>
                 <button
                   onClick={() => setOpen(null)}
-                  className="p-2 rameunded-md hover:bg-secondary"
+                  className="p-2 rounded-md hover:bg-secondary"
                   aria-label={t("common.close")}
                 >
                   <X className="h-5 w-5" />
