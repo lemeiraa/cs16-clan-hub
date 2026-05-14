@@ -109,9 +109,14 @@ function ReportarPage() {
       toast.success("Abrindo WhatsApp com o report...");
       setForm({ name: "", nick: "", reportedNick: "", occurredAt: "", notes: "" });
       setVideo(null);
-      // Navega na mesma aba para evitar bloqueio de pop-up
-      window.location.href = waUrl;
+      if (waWindow && !waWindow.closed) {
+        waWindow.location.href = waUrl;
+      } else {
+        // Fallback caso o popup tenha sido bloqueado
+        window.location.href = waUrl;
+      }
     } catch (err) {
+      if (waWindow && !waWindow.closed) waWindow.close();
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Erro ao preparar report.");
     } finally {
