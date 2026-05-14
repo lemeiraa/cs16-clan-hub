@@ -725,3 +725,149 @@ function Textarea({ label, value, onChange, rows = 3, mono }: { label: string; v
     </div>
   );
 }
+
+/* ============== REPORTS ============== */
+function ReportsAdmin() {
+  const [list, setList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [admins, setAdmins] = useState<any[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("reports")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setList(data ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+    supabase
+      .from("whatsapp_admins")
+      .select("name,phone")
+      .eq("active", true)
+      .order("sort_order")
+      .then(({ data }) => setAdmins(data ?? []));
+  }, [load]);
+
+  const buildText = (r: any) => {
+    const lines = [
+      "🚨 *REPORT — CS Nostalgia*",
+      "",
+      `*Nome:* ${r.reporter_name}`,
+      `*Nick no servidor:* ${r.reporter_nick}`,
+      `*Nick reportado:* ${r.reported_nick}`,
+      `*Horário do ocorrido:* ${r.occurred_at}`,
+      r.notes ? `*Observações:* ${r.notes}` : null,
+      r.video_url ? `*Vídeo:* ${r.video_url}` : "*Vídeo:* (não enviado)",
+      r.contact_email ? `*Contato:* ${r.contact_email}` : null,
+      `*Recebido em:* ${new Date(r.created_at).toLocaleString("pt-BR")}`,
+    ].filter(Boolean).join("\n");
+    return lines;
+  };
+
+  const shareWhats = (r: any) => {
+    const text = encodeURIComponent(buildText(r));
+    const phone = admins[0]?.phone?.replace(/\D/g, "") ?? "";
+    const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(url, "_blank");
+  };
+
+  const shareEmail = (r: any) => {
+    const subject = encodeURIComponent(`Report — ${r.reported_nick}`);
+    const body = encodeURIComponent(buildText(r).replace(/\*/g, ""));
+    const to = r.contact_email ?? "";
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  };
+
+  const remove = async (r: any) => {
+    if (!confirm("Excluir este report? O vídeo também será apagado.")) return;
+    if (r.video_path) {
+      const { error: stErr } = await supabase.storage.from("reports").remove([r.video_path]);
+      if (stErr) console.warn("Falha ao remover vídeo:", stErr.message);
+    }
+    const { error } = await supabase.from("reports").delete().eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success("Report excluído");
+    load();
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between mb-4 items-center">
+        <h2 className="font-display text-xl font-bold">Reportes ({list.length})</h2>
+        <button onClick={load} className="px-3 py-1.5 text-xs uppercase rounded bg-secondary hover:bg-secondary/70">
+          Atualizar
+        </button>
+      </div>
+
+      {loading ? (
+        "Carregando..."
+      ) : list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum report até o momento.</p>
+      ) : (
+        <div className="grid gap-3">
+          {list.map((r) => (
+            <div key={r.id} className="rounded-lg border border-border bg-card p-4 space-y-2">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-[240px]">
+                  <p className="font-bold">
+                    Reportado: <span className="text-accent">{r.reported_nick}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Por <strong>{r.reporter_name}</strong> ({r.reporter_nick})
+                    {r.contact_email && <> · {r.contact_email}</>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ocorrido: {r.occurred_at} · Recebido: {new Date(r.created_at).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              </div>
+
+              {r.notes && (
+                <p className="text-sm whitespace-pre-wrap rounded bg-background/60 border border-border p-2">
+                  {r.notes}
+                </p>
+              )}
+
+              {r.video_url && (
+                <a
+                  href={r.video_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block text-xs text-accent underline"
+                >
+                  Ver vídeo demonstrativo →
+                </a>
+              )}
+
+              <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
+                <button
+                  onClick={() => shareWhats(r)}
+                  className="px-3 py-1.5 text-xs rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                >
+                  Compartilhar no WhatsApp
+                </button>
+                <button
+                  onClick={() => shareEmail(r)}
+                  className="px-3 py-1.5 text-xs rounded bg-secondary hover:bg-secondary/70"
+                >
+                  Enviar por email
+                </button>
+                <button
+                  onClick={() => remove(r)}
+                  className="px-3 py-1.5 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30 ml-auto"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
