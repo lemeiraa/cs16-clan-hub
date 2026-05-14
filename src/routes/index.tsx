@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ServerCard } from "@/components/server-card";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { t } = useTranslation();
   const { data: servers = [] } = useQuery({
     queryKey: ["servers"],
     queryFn: fetchServers,
@@ -43,27 +45,26 @@ function Index() {
       >
         <div className="container mx-auto px-4 py-20 md:py-32 text-center">
           <p className="text-xs uppercase tracking-[0.4em] text-accent mb-4 font-semibold">
-            Counter-Strike 1.6 — Brasil & Venezuela
+            {t("home.eyebrow")}
           </p>
           <h1 className="font-display text-5xl md:text-7xl font-bold leading-none">
             <span className="text-gradient">CS NOSTALGIA</span>
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-            Reviva o clássico. {activeCount} servidores ativos, comunidade
-            unida, gameplay nostálgico do CS 1.6 como deve ser.
+            {t("home.heroSub", { count: activeCount })}
           </p>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
             <Link
               to="/servidores"
               className="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground shadow-glow hover:opacity-90 transition"
             >
-              Ver Servidores
+              {t("home.seeServers")}
             </Link>
             <Link
               to="/loja"
               className="px-6 py-3 text-sm font-bold uppercase tracking-wider rounded-md border border-border hover:bg-secondary transition"
             >
-              Loja VIP
+              {t("home.shopVip")}
             </Link>
           </div>
         </div>
@@ -73,10 +74,10 @@ function Index() {
         <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">
-              Status ao vivo
+              {t("home.statusLive")}
             </p>
             <h2 className="font-display text-3xl md:text-4xl font-bold mt-1">
-              Nossos Servidores
+              {t("home.ourServers")}
             </h2>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
@@ -85,7 +86,7 @@ function Index() {
               to="/servidores"
               className="text-sm uppercase tracking-wider text-muted-foreground hover:text-accent transition"
             >
-              Ver todos →
+              {t("home.seeAll")}
             </Link>
           </div>
         </div>
@@ -99,13 +100,13 @@ function Index() {
       <section className="container mx-auto px-4 pb-20">
         <div className="text-center mb-10">
           <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">
-            Junte-se à comunidade
+            {t("home.joinCommunity")}
           </p>
           <h2 className="font-display text-3xl md:text-4xl font-bold mt-1">
-            Comunidade CS Nostalgia
+            {t("home.communityTitle")}
           </h2>
           <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Entre nos nossos canais, converse com a galera, fique por dentro de eventos e novidades.
+            {t("home.communitySub")}
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -120,12 +121,12 @@ function Index() {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
               </div>
               <div>
-                <p className="font-display text-xl font-bold">WhatsApp</p>
-                <p className="text-sm text-muted-foreground">Grupo da comunidade</p>
+                <p className="font-display text-xl font-bold">{t("home.whatsapp")}</p>
+                <p className="text-sm text-muted-foreground">{t("home.whatsappSub")}</p>
               </div>
             </div>
             <p className="mt-4 text-sm uppercase tracking-wider text-accent group-hover:translate-x-1 transition-transform">
-              Entrar no grupo →
+              {t("home.joinGroup")}
             </p>
           </a>
 
@@ -140,12 +141,12 @@ function Index() {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
               </div>
               <div>
-                <p className="font-display text-xl font-bold">Discord</p>
-                <p className="text-sm text-muted-foreground">Servidor oficial</p>
+                <p className="font-display text-xl font-bold">{t("home.discord")}</p>
+                <p className="text-sm text-muted-foreground">{t("home.discordSub")}</p>
               </div>
             </div>
             <p className="mt-4 text-sm uppercase tracking-wider text-accent group-hover:translate-x-1 transition-transform">
-              Entrar no Discord →
+              {t("home.joinDiscord")}
             </p>
           </a>
 
@@ -160,12 +161,12 @@ function Index() {
                 <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.5 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.253 0-2.265-1.014-2.265-2.265z"/></svg>
               </div>
               <div>
-                <p className="font-display text-xl font-bold">Steam</p>
-                <p className="text-sm text-muted-foreground">Grupo na Steam</p>
+                <p className="font-display text-xl font-bold">{t("home.steam")}</p>
+                <p className="text-sm text-muted-foreground">{t("home.steamSub")}</p>
               </div>
             </div>
             <p className="mt-4 text-sm uppercase tracking-wider text-accent group-hover:translate-x-1 transition-transform">
-              Entrar no grupo →
+              {t("home.joinGroup")}
             </p>
           </a>
         </div>
@@ -177,6 +178,7 @@ function Index() {
 }
 
 function PlayersCounter() {
+  const { t } = useTranslation();
   const fetchAll = useServerFn(getAllServersStatus);
   const { data, isLoading } = useQuery({
     queryKey: ["servers-status-all"],
@@ -197,7 +199,7 @@ function PlayersCounter() {
         {isLoading ? "…" : `${total}${max ? `/${max}` : ""}`}
       </span>
       <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-        jogadores online
+        {t("home.playersOnline")}
       </span>
     </div>
   );
@@ -215,6 +217,8 @@ type NewsItem = {
 };
 
 function NewsSection() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === "en" ? "en-US" : i18n.language === "es" ? "es-ES" : "pt-BR";
   const [open, setOpen] = useState<NewsItem | null>(null);
   const { data: news = [], isLoading } = useQuery({
     queryKey: ["news", "home"],
@@ -239,10 +243,10 @@ function NewsSection() {
       <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold flex items-center gap-2">
-            <Newspaper className="h-3.5 w-3.5" /> Fique por dentro
+            <Newspaper className="h-3.5 w-3.5" /> {t("home.newsEyebrow")}
           </p>
           <h2 className="font-display text-3xl md:text-4xl font-bold mt-1">
-            Notícias e Atualizações
+            {t("home.newsTitle")}
           </h2>
         </div>
       </div>
@@ -278,7 +282,7 @@ function NewsSection() {
                   </span>
                   {n.pinned && (
                     <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-primary/20 text-primary inline-flex items-center gap-1">
-                      <Pin className="h-3 w-3" /> Fixada
+                      <Pin className="h-3 w-3" /> {t("home.pinned")}
                     </span>
                   )}
                 </div>
@@ -287,7 +291,7 @@ function NewsSection() {
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{n.excerpt}</p>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-3">
-                  {new Date(n.created_at).toLocaleDateString("pt-BR", {
+                  {new Date(n.created_at).toLocaleDateString(dateLocale, {
                     day: "2-digit", month: "long", year: "numeric",
                   })}
                 </p>
@@ -320,15 +324,15 @@ function NewsSection() {
                   </span>
                   <h3 className="font-display text-2xl font-bold mt-2">{open.title}</h3>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">
-                    {new Date(open.created_at).toLocaleDateString("pt-BR", {
+                    {new Date(open.created_at).toLocaleDateString(dateLocale, {
                       day: "2-digit", month: "long", year: "numeric",
                     })}
                   </p>
                 </div>
                 <button
                   onClick={() => setOpen(null)}
-                  className="p-2 rounded-md hover:bg-secondary"
-                  aria-label="Fechar"
+                  className="p-2 rameunded-md hover:bg-secondary"
+                  aria-label={t("common.close")}
                 >
                   <X className="h-5 w-5" />
                 </button>
