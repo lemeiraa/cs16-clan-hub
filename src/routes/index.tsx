@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ServerCard } from "@/components/server-card";
 import { RecentUsersMarquee } from "@/components/recent-users-marquee";
+import { HeroVideo } from "@/components/hero-video";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
