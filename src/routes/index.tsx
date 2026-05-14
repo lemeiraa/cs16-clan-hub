@@ -177,6 +177,8 @@ function Index() {
         </div>
       </section>
 
+      <RecentUsersMarquee />
+
       <NewsSection />
     </>
   );
