@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_AVATARS, avatarUrlFor } from "@/lib/avatars";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/conta")({
 });
 
 function AccountPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -56,21 +58,21 @@ function AccountPage() {
     setSavingNick(true);
     const { error } = await supabase.from("profiles").update({ nick }).eq("id", userId);
     setSavingNick(false);
-    if (error) toast.error("Erro", { description: error.message });
-    else toast.success("Nome atualizado!");
+    if (error) toast.error(t("common.error"), { description: error.message });
+    else toast.success(t("account.nameUpdated"));
   };
 
   const savePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      toast.error("Senha curta", { description: "Mínimo de 6 caracteres." });
+      toast.error(t("account.pwdShort"), { description: t("account.pwdShortText") });
       return;
     }
     setSavingPwd(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setSavingPwd(false);
-    if (error) toast.error("Erro", { description: error.message });
-    else { toast.success("Senha atualizada!"); setNewPassword(""); }
+    if (error) toast.error(t("common.error"), { description: error.message });
+    else { toast.success(t("account.pwdUpdated")); setNewPassword(""); }
   };
 
   const pickAvatar = async (url: string) => {
@@ -78,8 +80,8 @@ function AccountPage() {
     setSavingAvatar(url);
     const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
     setSavingAvatar(null);
-    if (error) toast.error("Erro", { description: error.message });
-    else { setAvatarUrl(url); toast.success("Avatar atualizado!"); }
+    if (error) toast.error(t("common.error"), { description: error.message });
+    else { setAvatarUrl(url); toast.success(t("account.avatarUpdated")); }
   };
 
   const logout = async () => {
@@ -88,7 +90,7 @@ function AccountPage() {
   };
 
   if (loading) {
-    return <section className="container mx-auto px-4 py-16 text-center text-muted-foreground">Carregando...</section>;
+    return <section className="container mx-auto px-4 py-16 text-center text-muted-foreground">{t("common.loading")}</section>;
   }
 
   const currentAvatar = avatarUrlFor(nick || email, avatarUrl ?? undefined);
@@ -98,11 +100,11 @@ function AccountPage() {
       <header className="flex items-center gap-4 mb-8">
         <img src={currentAvatar} alt="Avatar" className="h-20 w-20 rounded-xl ring-2 ring-accent bg-card" />
         <div className="flex-1">
-          <h1 className="font-display text-3xl font-bold">{nick || "Sem nick"}</h1>
+          <h1 className="font-display text-3xl font-bold">{nick || t("account.noNick")}</h1>
           <p className="text-sm text-muted-foreground">{email}</p>
         </div>
         <button onClick={logout} className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border border-border hover:bg-secondary inline-flex items-center gap-1.5">
-          <LogOut className="h-3.5 w-3.5" /> Sair
+          <LogOut className="h-3.5 w-3.5" /> {t("account.logout")}
         </button>
       </header>
 
@@ -110,7 +112,7 @@ function AccountPage() {
         <form onSubmit={saveNick} className="rounded-xl border border-border bg-card p-6 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <User className="h-4 w-4 text-accent" />
-            <h2 className="font-display uppercase tracking-wider text-sm">Trocar nome</h2>
+            <h2 className="font-display uppercase tracking-wider text-sm">{t("account.changeName")}</h2>
           </div>
           <input
             value={nick}
@@ -120,14 +122,14 @@ function AccountPage() {
             className="w-full rounded-md border border-border bg-input px-3 py-2"
           />
           <button disabled={savingNick} className="mt-4 w-full px-4 py-2 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground disabled:opacity-50">
-            {savingNick ? "Salvando..." : "Salvar nome"}
+            {savingNick ? t("common.saving") : t("account.saveName")}
           </button>
         </form>
 
         <form onSubmit={savePassword} className="rounded-xl border border-border bg-card p-6 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <Lock className="h-4 w-4 text-accent" />
-            <h2 className="font-display uppercase tracking-wider text-sm">Trocar senha</h2>
+            <h2 className="font-display uppercase tracking-wider text-sm">{t("account.changePassword")}</h2>
           </div>
           <input
             type="password"
@@ -135,11 +137,11 @@ function AccountPage() {
             onChange={(e) => setNewPassword(e.target.value)}
             required
             minLength={6}
-            placeholder="Nova senha"
+            placeholder={t("account.newPassword")}
             className="w-full rounded-md border border-border bg-input px-3 py-2"
           />
           <button disabled={savingPwd} className="mt-4 w-full px-4 py-2 text-sm font-bold uppercase tracking-wider rounded-md bg-gradient-brand text-brand-foreground disabled:opacity-50">
-            {savingPwd ? "Salvando..." : "Atualizar senha"}
+            {savingPwd ? t("common.saving") : t("account.updatePassword")}
           </button>
         </form>
       </div>
@@ -147,7 +149,7 @@ function AccountPage() {
       <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-card">
         <div className="flex items-center gap-2 mb-4">
           <ImageIcon className="h-4 w-4 text-accent" />
-          <h2 className="font-display uppercase tracking-wider text-sm">Escolher avatar</h2>
+          <h2 className="font-display uppercase tracking-wider text-sm">{t("account.pickAvatar")}</h2>
         </div>
         <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
           {DEFAULT_AVATARS.map((a) => {

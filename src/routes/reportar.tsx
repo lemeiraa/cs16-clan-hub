@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle, Upload, Loader2, Lock, CheckCircle2 } from "lucide-react";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/reportar")({
 });
 
 function ReportarPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [authChecked, setAuthChecked] = useState(false);
   const [authed, setAuthed] = useState(false);
@@ -55,11 +57,11 @@ function ReportarPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.nick.trim() || !form.reportedNick.trim() || !form.occurredAt.trim()) {
-      toast.error("Preencha todos os campos obrigatórios.");
+      toast.error(t("report.fillAll"));
       return;
     }
     if (!userId) {
-      toast.error("Sessão expirada. Faça login novamente.");
+      toast.error(t("report.sessionExpired"));
       return;
     }
 
@@ -69,7 +71,7 @@ function ReportarPage() {
     try {
       if (video) {
         if (video.size > 100 * 1024 * 1024) {
-          toast.error("Vídeo muito grande (máx. 100 MB).");
+          toast.error(t("report.videoTooLarge"));
           setSubmitting(false);
           return;
         }
@@ -96,13 +98,13 @@ function ReportarPage() {
       });
       if (insErr) throw insErr;
 
-      toast.success("Denúncia registrada! Os admins serão notificados.");
+      toast.success(t("report.success"));
       setForm({ name: "", nick: "", reportedNick: "", occurredAt: "", notes: "" });
       setVideo(null);
       setSent(true);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar denúncia.");
+      toast.error(err instanceof Error ? err.message : t("report.sendError"));
     } finally {
       setSubmitting(false);
     }
@@ -120,22 +122,22 @@ function ReportarPage() {
     return (
       <section className="container mx-auto px-4 py-12 max-w-xl text-center">
         <Lock className="mx-auto h-10 w-10 text-accent" />
-        <h1 className="font-display text-3xl font-bold mt-4">Login necessário</h1>
+        <h1 className="font-display text-3xl font-bold mt-4">{t("report.needLogin")}</h1>
         <p className="text-muted-foreground mt-2">
-          Para enviar uma denúncia você precisa estar logado na sua conta.
+          {t("report.needLoginText")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
             to="/auth"
             className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
           >
-            Entrar / Cadastrar
+            {t("report.enterRegister")}
           </Link>
           <button
             onClick={() => navigate({ to: "/" })}
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-secondary transition"
           >
-            Voltar ao início
+            {t("common.backHome")}
           </button>
         </div>
       </section>
@@ -146,23 +148,22 @@ function ReportarPage() {
     return (
       <section className="container mx-auto px-4 py-16 max-w-xl text-center">
         <CheckCircle2 className="mx-auto h-12 w-12 text-accent" />
-        <h1 className="font-display text-3xl font-bold mt-4">Denúncia enviada</h1>
+        <h1 className="font-display text-3xl font-bold mt-4">{t("report.sentTitle")}</h1>
         <p className="text-muted-foreground mt-2">
-          Sua denúncia foi registrada no painel administrativo. Nossa equipe irá analisar e tomar as
-          providências necessárias.
+          {t("report.sentText")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             onClick={() => setSent(false)}
             className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
           >
-            Enviar outra denúncia
+            {t("report.sendAnother")}
           </button>
           <button
             onClick={() => navigate({ to: "/" })}
             className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-secondary transition"
           >
-            Voltar ao início
+            {t("common.backHome")}
           </button>
         </div>
       </section>
@@ -171,38 +172,37 @@ function ReportarPage() {
 
   return (
     <section className="container mx-auto px-4 py-12 max-w-3xl">
-      <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Comunidade</p>
+      <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">{t("common.community")}</p>
       <h1 className="font-display text-4xl font-bold mt-1 flex items-center gap-3">
-        <AlertTriangle className="text-accent" /> Reportar
+        <AlertTriangle className="text-accent" /> {t("report.title")}
       </h1>
       <p className="text-muted-foreground mt-2">
-        Denuncie jogadores trapaceando ou abusos de administradores. Sua denúncia será registrada
-        no painel dos administradores e analisada pela equipe.
+        {t("report.sub")}
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 rounded-xl border border-border bg-card p-6 shadow-card space-y-4">
-        <Field label="Seu nome *" value={form.name} onChange={update("name")} placeholder="Como podemos te chamar" />
-        <Field label="Seu nick no servidor *" value={form.nick} onChange={update("nick")} placeholder="Nick que você usa" />
-        <Field label="Nick do reportado *" value={form.reportedNick} onChange={update("reportedNick")} placeholder="Nick do jogador / admin" />
-        <Field label="Horário do ocorrido *" value={form.occurredAt} onChange={update("occurredAt")} placeholder="Ex.: 13/05/2026 às 21h30" />
+        <Field label={t("report.name")} value={form.name} onChange={update("name")} placeholder={t("report.namePh")} />
+        <Field label={t("report.nick")} value={form.nick} onChange={update("nick")} placeholder={t("report.nickPh")} />
+        <Field label={t("report.reportedNick")} value={form.reportedNick} onChange={update("reportedNick")} placeholder={t("report.reportedNickPh")} />
+        <Field label={t("report.occurredAt")} value={form.occurredAt} onChange={update("occurredAt")} placeholder={t("report.occurredAtPh")} />
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Observações extras</label>
+          <label className="block text-sm font-medium mb-1.5">{t("report.notes")}</label>
           <textarea
             value={form.notes}
             onChange={update("notes")}
             rows={4}
-            placeholder="Descreva o que aconteceu, servidor, mapa, etc."
+            placeholder={t("report.notesPh")}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Vídeo demonstrativo (opcional, máx. 100 MB)</label>
+          <label className="block text-sm font-medium mb-1.5">{t("report.video")}</label>
           <label className="flex items-center gap-3 cursor-pointer rounded-md border border-dashed border-border bg-background px-4 py-6 text-sm hover:bg-secondary transition">
             <Upload className="h-5 w-5 text-accent" />
             <span className="text-muted-foreground">
-              {video ? video.name : "Clique para selecionar um vídeo (MP4, MOV, WEBM, MKV)"}
+              {video ? video.name : t("report.videoPh")}
             </span>
             <input
               type="file"
@@ -218,11 +218,11 @@ function ReportarPage() {
           disabled={submitting}
           className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition disabled:opacity-50"
         >
-          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : "Enviar denúncia"}
+          {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {t("common.sending")}</> : t("report.submit")}
         </button>
 
         <p className="text-xs text-muted-foreground text-center">
-          Sua denúncia será analisada pela equipe administrativa.
+          {t("report.finalNote")}
         </p>
       </form>
     </section>
