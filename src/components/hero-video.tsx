@@ -64,7 +64,7 @@ export function HeroVideo() {
     <>
       {hydrated && enabled && (
         <div
-          className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
+          className="absolute inset-0 overflow-hidden pointer-events-none"
           aria-hidden
         >
           <iframe
