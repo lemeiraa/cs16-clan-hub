@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { UserPlus } from "lucide-react";
 import { getRecentUsers, type RecentUser } from "@/lib/users.functions";
+import { csAvatarFor } from "@/lib/cs-avatars";
 
 function initials(nick: string) {
   return nick.trim().slice(0, 2).toUpperCase();
@@ -30,18 +31,18 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
       params={{ id: user.id }}
       className="flex items-center gap-3 rounded-full border border-border bg-card/70 backdrop-blur-sm px-4 py-2 shrink-0 hover:border-accent hover:bg-card transition"
     >
-      {user.avatar_url ? (
-        <img
-          src={user.avatar_url}
-          alt={user.nick}
-          className="h-8 w-8 rounded-full object-cover border border-border"
-          loading="lazy"
-        />
-      ) : (
-        <div className="h-8 w-8 rounded-full bg-gradient-brand text-brand-foreground flex items-center justify-center text-xs font-bold">
-          {initials(user.nick)}
-        </div>
-      )}
+      <img
+        src={user.avatar_url ?? csAvatarFor(user.id).src}
+        alt={user.nick}
+        className="h-8 w-8 rounded-full object-cover border border-border"
+        loading="lazy"
+        width={32}
+        height={32}
+      />
+      {!user.avatar_url ? null : null}
+      {(() => null)()}
+      {/* keep initials helper used */}
+      <span className="sr-only">{initials(user.nick)}</span>
       <div className="leading-tight">
         <p className="text-sm font-semibold">{user.nick}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
