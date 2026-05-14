@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { UserPlus } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 import { getRecentUsers, type RecentUser } from "@/lib/users.functions";
 import { csAvatarFor } from "@/lib/cs-avatars";
+
+const PAGE_SIZE = 20;
 
 
 function formatRelative(iso: string, lang: string) {
