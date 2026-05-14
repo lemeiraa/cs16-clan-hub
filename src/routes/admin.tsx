@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Painel Admin — CS Nostalgia" }] }),
 });
 
-type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios";
+type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios" | "reportes";
 
 function AdminPanel() {
   const navigate = useNavigate();
@@ -45,6 +45,7 @@ function AdminPanel() {
     { id: "whatsapp", label: "WhatsApp" },
     { id: "noticias", label: "Notícias" },
     { id: "usuarios", label: "Usuários" },
+    { id: "reportes", label: "Reportes" },
   ];
 
   return (
@@ -87,6 +88,7 @@ function AdminPanel() {
         {tab === "whatsapp" && <WhatsappAdminsAdmin />}
         {tab === "noticias" && <NewsAdmin />}
         {tab === "usuarios" && <UsersAdmin />}
+        {tab === "reportes" && <ReportsAdmin />}
       </div>
     </section>
   );
