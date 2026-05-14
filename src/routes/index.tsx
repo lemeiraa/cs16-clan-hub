@@ -73,7 +73,7 @@ function Index() {
         </div>
       </section>
 
-      <RecentUsersMarquee />
+      
 
       <section className="container mx-auto px-4 py-16">
         <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
