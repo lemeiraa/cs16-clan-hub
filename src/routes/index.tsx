@@ -6,11 +6,11 @@ import { useTranslation } from "react-i18next";
 import { ServerCard } from "@/components/server-card";
 import { RecentUsersMarquee } from "@/components/recent-users-marquee";
 import { HeroVideo } from "@/components/hero-video";
+import { AnnouncementsBanner } from "@/components/announcements-banner";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, Pin, X, Users, Megaphone } from "lucide-react";
-import { useEffect } from "react";
+import { Newspaper, Pin, X, Users } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
