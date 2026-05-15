@@ -38,6 +38,7 @@ function Index() {
 
   return (
     <>
+      <ZombiePlagueAnnouncement />
       <section
         className="relative overflow-hidden border-b border-border"
         style={{
