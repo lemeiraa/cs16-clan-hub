@@ -9,7 +9,8 @@ import { HeroVideo } from "@/components/hero-video";
 import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Newspaper, Pin, X, Users } from "lucide-react";
+import { Newspaper, Pin, X, Users, Megaphone } from "lucide-react";
+import { useEffect, useState as useStateReact } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
