@@ -136,19 +136,28 @@ function PlayerPage() {
                     {t("player.member")}
                   </span>
                 ) : (
-                  profile.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider bg-accent/15 text-accent font-bold inline-flex items-center gap-1"
-                    >
-                      {role === "admin" ? (
-                        <ShieldCheck className="h-3 w-3" />
-                      ) : (
-                        <Shield className="h-3 w-3" />
-                      )}
-                      {role}
-                    </span>
-                  ))
+                  profile.roles.map((role) => {
+                    const styles: Record<string, string> = {
+                      admin:
+                        "bg-red-500/15 text-red-400 border border-red-500/40 shadow-[0_0_12px_rgba(239,68,68,0.7)] animate-pulse",
+                      fundador:
+                        "bg-purple-500/15 text-purple-300 border border-purple-500/40 shadow-[0_0_12px_rgba(168,85,247,0.7)] animate-pulse",
+                      vip:
+                        "bg-yellow-400/15 text-yellow-300 border border-yellow-400/40 shadow-[0_0_12px_rgba(250,204,21,0.7)] animate-pulse",
+                    };
+                    const cls =
+                      styles[role] ?? "bg-accent/15 text-accent border border-accent/30";
+                    const Icon = role === "admin" || role === "fundador" ? ShieldCheck : Shield;
+                    return (
+                      <span
+                        key={role}
+                        className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold inline-flex items-center gap-1 ${cls}`}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {role}
+                      </span>
+                    );
+                  })
                 )}
               </div>
             </div>
