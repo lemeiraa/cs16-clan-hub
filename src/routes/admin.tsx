@@ -52,6 +52,7 @@ function AdminPanel() {
     { id: "pagamentos", label: "Pagamentos" },
     { id: "whatsapp", label: "WhatsApp" },
     { id: "noticias", label: "Notícias" },
+    { id: "avisos", label: "Avisos" },
     { id: "usuarios", label: "Usuários" },
     { id: "reportes", label: "Reportes" },
   ];
