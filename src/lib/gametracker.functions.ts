@@ -197,6 +197,68 @@ async function fetchWithTimeout(url: string, ms: number): Promise<string> {
   }
 }
 
+function parseTsarvarValue(html: string, label: string): string | null {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(
+    `<h3 class="sPg-vrNm">\\s*${escaped}\\s*<\\/h3>[\\s\\S]{0,1500}?<div class="sPg-vrVal[^">]*"[^>]*>([\\s\\S]*?)<\\/div>`,
+    "i",
+  );
+  const m = html.match(re);
+  if (!m) return null;
+  const value = stripTags(m[1]).replace(/\s+/g, " ").trim();
+  return value || null;
+}
+
+function parseTsarvarStatusOnline(html: string): boolean | null {
+  const statusValue = parseTsarvarValue(html, "Status do servidor");
+  if (statusValue) {
+    const normalized = statusValue.toLowerCase();
+    if (normalized.includes("online")) return true;
+    if (normalized.includes("offline")) return false;
+  }
+
+  const badge = html.match(/<div class="sPg-st\s+sPg-st-(\d+)"[^>]*>\s*([^<]+?)\s*<\/div>/i);
+  if (badge) {
+    const code = badge[1];
+    const text = badge[2].toLowerCase();
+    if (code === "1" || text.includes("online")) return true;
+    if (code === "0" || text.includes("offline")) return false;
+  }
+
+  return null;
+}
+
+function parseTsarvarPlayersCount(html: string): { current: number; max: number } {
+  const value = parseTsarvarValue(html, "Quantidade de jogadores");
+  const m = value?.match(/(\d+)\s*\/\s*(\d+)/);
+  if (m) return { current: parseInt(m[1], 10), max: parseInt(m[2], 10) };
+  return { current: 0, max: 0 };
+}
+
+async function fetchTsarvarStatus(server: ServerInfo): Promise<ServerStatus> {
+  const base = `${server.ip}:${server.port}`;
+  const html = await fetchWithTimeout(
+    `https://tsarvar.com/pt/servers/counter-strike-1.6/${base}`,
+    8000,
+  );
+  const online = parseTsarvarStatusOnline(html);
+  if (online === null) {
+    throw new Error("Tsarvar sem dados confiáveis no momento");
+  }
+  const players = parseTsarvarPlayersCount(html);
+
+  return {
+    slug: server.slug,
+    online,
+    map: parseTsarvarValue(html, "Mapa atual"),
+    players: players.current,
+    maxPlayers: players.max,
+    livePlayers: [],
+    topPlayers: [],
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
 async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
   const base = `${server.ip}:${server.port}`;
   const now = new Date().toISOString();
@@ -215,6 +277,7 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
   }
 
   try {
+    const tsarvarStatus = fetchTsarvarStatus(server).catch(() => null);
     const [infoHtml, topHtml] = await Promise.all([
       fetchWithTimeout(
         `https://www.gametracker.com/server_info/${base}/`,
@@ -230,7 +293,14 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
     const map = parseMap(infoHtml);
     const parsedOnline = parseStatusOnline(infoHtml);
     if (parsedOnline === null && isGameTrackerInconclusive(infoHtml)) {
+      const fallback = await tsarvarStatus;
+      if (fallback) return fallback;
       throw new Error("GameTracker sem dados confiáveis no momento");
+    }
+    if (parsedOnline === false) {
+      const fallback = await tsarvarStatus;
+      if (fallback?.online) return fallback;
+      if (!fallback) throw new Error("Offline não confirmado pela fonte secundária");
     }
     const online = parsedOnline ?? false;
     const topPlayers = parseRankingTable(topHtml || infoHtml);
@@ -247,6 +317,8 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
       fetchedAt: now,
     };
   } catch (err) {
+    const fallback = await fetchTsarvarStatus(server).catch(() => null);
+    if (fallback) return fallback;
     // Marca como erro — quem chama decide se reutiliza cache antigo
     throw err instanceof Error ? err : new Error("Erro ao consultar GameTracker");
   }
