@@ -1,4 +1,10 @@
 import { Shield, ShieldCheck } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STYLES: Record<string, string> = {
   admin:
