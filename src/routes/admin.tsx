@@ -32,7 +32,7 @@ export const Route = createFileRoute("/admin")({
   },
 });
 
-type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios" | "reportes";
+type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "avisos" | "usuarios" | "reportes";
 
 function AdminPanel() {
   const [tab, setTab] = useState<Tab>("servidores");
