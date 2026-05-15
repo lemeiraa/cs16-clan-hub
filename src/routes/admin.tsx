@@ -32,7 +32,7 @@ export const Route = createFileRoute("/admin")({
   },
 });
 
-type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "usuarios" | "reportes";
+type Tab = "servidores" | "cargos" | "ammo" | "pagamentos" | "whatsapp" | "noticias" | "avisos" | "usuarios" | "reportes";
 
 function AdminPanel() {
   const [tab, setTab] = useState<Tab>("servidores");
@@ -52,6 +52,7 @@ function AdminPanel() {
     { id: "pagamentos", label: "Pagamentos" },
     { id: "whatsapp", label: "WhatsApp" },
     { id: "noticias", label: "Notícias" },
+    { id: "avisos", label: "Avisos" },
     { id: "usuarios", label: "Usuários" },
     { id: "reportes", label: "Reportes" },
   ];
@@ -95,6 +96,7 @@ function AdminPanel() {
         {tab === "pagamentos" && <PaymentMethodsAdmin />}
         {tab === "whatsapp" && <WhatsappAdminsAdmin />}
         {tab === "noticias" && <NewsAdmin />}
+        {tab === "avisos" && <AnnouncementsAdmin />}
         {tab === "usuarios" && <UsersAdmin />}
         {tab === "reportes" && <ReportsAdmin />}
       </div>
@@ -877,5 +879,224 @@ function ReportsAdmin() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ============== ANNOUNCEMENTS ============== */
+const COLOR_OPTIONS: { id: string; label: string; swatch: string }[] = [
+  { id: "accent", label: "Destaque", swatch: "bg-accent" },
+  { id: "primary", label: "Primária", swatch: "bg-primary" },
+  { id: "success", label: "Sucesso", swatch: "bg-success" },
+  { id: "warning", label: "Atenção", swatch: "bg-yellow-500" },
+  { id: "destructive", label: "Crítico", swatch: "bg-destructive" },
+  { id: "info", label: "Info", swatch: "bg-sky-500" },
+];
+const EFFECT_OPTIONS: { id: string; label: string }[] = [
+  { id: "none", label: "Nenhum" },
+  { id: "pulse", label: "Pulsante" },
+  { id: "glow", label: "Brilho" },
+  { id: "marquee", label: "Marquee (rolando)" },
+  { id: "blink", label: "Piscar" },
+];
+
+function AnnouncementsAdmin() {
+  const [list, setList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("announcements")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setList(data ?? []);
+    setLoading(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const remove = async (id: string) => {
+    if (!confirm("Excluir aviso?")) return;
+    const { error } = await supabase.from("announcements").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Excluído"); load();
+  };
+
+  const toggle = async (a: any) => {
+    const { error } = await supabase.from("announcements").update({ active: !a.active }).eq("id", a.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between mb-4">
+        <h2 className="font-display text-xl font-bold">Avisos importantes ({list.length})</h2>
+        <button onClick={() => setCreating(true)} className="px-3 py-1.5 text-xs uppercase rounded bg-accent/20 text-accent hover:bg-accent/30">+ Novo</button>
+      </div>
+      {loading ? "Carregando..." : (
+        <div className="grid gap-3">
+          {list.map((a) => {
+            const color = COLOR_OPTIONS.find((c) => c.id === a.color);
+            const effect = EFFECT_OPTIONS.find((e) => e.id === a.effect);
+            return (
+              <div key={a.id} className="rounded-lg border border-border bg-card p-4 flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-[240px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={cn("inline-block h-3 w-3 rounded-sm", color?.swatch ?? "bg-accent")} />
+                    {a.tag && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-secondary">{a.tag}</span>}
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{effect?.label ?? a.effect}</span>
+                    {!a.active && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">Inativo</span>}
+                    {a.dismissible && <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Dispensável</span>}
+                  </div>
+                  <p className="font-bold mt-1">{a.title || <span className="text-muted-foreground">(sem título)</span>}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{a.message}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Ordem: {a.sort_order}
+                    {a.starts_at && ` · Início: ${new Date(a.starts_at).toLocaleString("pt-BR")}`}
+                    {a.ends_at && ` · Fim: ${new Date(a.ends_at).toLocaleString("pt-BR")}`}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => toggle(a)} className="px-2 py-1 text-xs rounded bg-secondary hover:bg-secondary/70">
+                    {a.active ? "Desativar" : "Ativar"}
+                  </button>
+                  <button onClick={() => setEditing(a)} className="px-2 py-1 text-xs rounded bg-secondary hover:bg-secondary/70">Editar</button>
+                  <button onClick={() => remove(a.id)} className="px-2 py-1 text-xs rounded bg-destructive/20 text-destructive hover:bg-destructive/30">Excluir</button>
+                </div>
+              </div>
+            );
+          })}
+          {list.length === 0 && <p className="text-sm text-muted-foreground">Nenhum aviso ainda.</p>}
+        </div>
+      )}
+      {(editing || creating) && (
+        <AnnouncementForm
+          initial={editing}
+          onClose={() => { setEditing(null); setCreating(false); }}
+          onSaved={() => { setEditing(null); setCreating(false); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function toLocalInput(v: string | null | undefined) {
+  if (!v) return "";
+  const d = new Date(v);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function AnnouncementForm({ initial, onClose, onSaved }: any) {
+  const [f, setF] = useState({
+    title: initial?.title ?? "",
+    message: initial?.message ?? "",
+    tag: initial?.tag ?? "",
+    color: initial?.color ?? "accent",
+    effect: initial?.effect ?? "pulse",
+    active: initial?.active ?? true,
+    dismissible: initial?.dismissible ?? true,
+    sort_order: initial?.sort_order ?? 0,
+    starts_at: toLocalInput(initial?.starts_at),
+    ends_at: toLocalInput(initial?.ends_at),
+  });
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!f.title.trim() && !f.message.trim()) {
+      return toast.error("Informe ao menos título ou mensagem");
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        title: f.title,
+        message: f.message,
+        tag: f.tag,
+        color: f.color,
+        effect: f.effect,
+        active: f.active,
+        dismissible: f.dismissible,
+        sort_order: Number(f.sort_order),
+        starts_at: f.starts_at ? new Date(f.starts_at).toISOString() : null,
+        ends_at: f.ends_at ? new Date(f.ends_at).toISOString() : null,
+      };
+      const op = initial
+        ? supabase.from("announcements").update(payload).eq("id", initial.id)
+        : supabase.from("announcements").insert(payload);
+      const { error } = await op;
+      if (error) throw error;
+      toast.success("Salvo"); onSaved();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title={initial ? "Editar aviso" : "Novo aviso"} onClose={onClose}>
+      <Input label="Etiqueta (ex: Inauguração)" value={f.tag} onChange={(v) => setF({ ...f, tag: v })} />
+      <Input label="Título" value={f.title} onChange={(v) => setF({ ...f, title: v })} />
+      <Textarea label="Mensagem" value={f.message} onChange={(v) => setF({ ...f, message: v })} rows={2} />
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Cor</label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {COLOR_OPTIONS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setF({ ...f, color: c.id })}
+              className={cn(
+                "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs",
+                f.color === c.id ? "border-accent bg-accent/10" : "border-border hover:bg-secondary",
+              )}
+            >
+              <span className={cn("h-3 w-3 rounded-sm", c.swatch)} />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Efeito</label>
+        <select
+          value={f.effect}
+          onChange={(e) => setF({ ...f, effect: e.target.value })}
+          className="w-full mt-1 rounded-md border border-border bg-input px-3 py-2 text-sm"
+        >
+          {EFFECT_OPTIONS.map((e) => (
+            <option key={e.id} value={e.id}>{e.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Input label="Ordem (menor aparece primeiro)" value={String(f.sort_order)} onChange={(v) => setF({ ...f, sort_order: Number(v) || 0 })} />
+        <div />
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Início (opcional)</label>
+          <input type="datetime-local" value={f.starts_at} onChange={(e) => setF({ ...f, starts_at: e.target.value })}
+            className="w-full mt-1 rounded-md border border-border bg-input px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Fim (opcional)</label>
+          <input type="datetime-local" value={f.ends_at} onChange={(e) => setF({ ...f, ends_at: e.target.value })}
+            className="w-full mt-1 rounded-md border border-border bg-input px-3 py-2 text-sm" />
+        </div>
+      </div>
+
+      <div className="flex gap-4 flex-wrap">
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} /> Ativo</label>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.dismissible} onChange={(e) => setF({ ...f, dismissible: e.target.checked })} /> Dispensável pelo usuário</label>
+      </div>
+
+      <ModalActions onClose={onClose} onSave={save} saving={saving} />
+    </Modal>
   );
 }
