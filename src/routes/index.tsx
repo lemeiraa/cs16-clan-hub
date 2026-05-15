@@ -10,7 +10,7 @@ import { fetchServers } from "@/lib/servers-db";
 import { getAllServersStatus } from "@/lib/gametracker.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Newspaper, Pin, X, Users, Megaphone } from "lucide-react";
-import { useEffect, useState as useStateReact } from "react";
+import { useEffect } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Route = createFileRoute("/")({
