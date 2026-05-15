@@ -96,6 +96,7 @@ function AdminPanel() {
         {tab === "pagamentos" && <PaymentMethodsAdmin />}
         {tab === "whatsapp" && <WhatsappAdminsAdmin />}
         {tab === "noticias" && <NewsAdmin />}
+        {tab === "avisos" && <AnnouncementsAdmin />}
         {tab === "usuarios" && <UsersAdmin />}
         {tab === "reportes" && <ReportsAdmin />}
       </div>
