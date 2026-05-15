@@ -286,26 +286,11 @@ export const getServerStatus = createServerFn({ method: "GET" })
     if (!server) {
       throw new Error(`Servidor não encontrado: ${data.slug}`);
     }
-    const cached = cache.get(server.slug);
-    if (cached && Date.now() - cached.at < TTL_MS) {
-      return cached.data;
-    }
-    const status = await fetchStatus(server);
-    cache.set(server.slug, { at: Date.now(), data: status });
-    return status;
+    return getCachedStatus(server);
   });
 
 export const getAllServersStatus = createServerFn({ method: "GET" }).handler(
   async () => {
-    const results = await Promise.all(
-      SERVERS.map(async (s) => {
-        const cached = cache.get(s.slug);
-        if (cached && Date.now() - cached.at < TTL_MS) return cached.data;
-        const status = await fetchStatus(s);
-        cache.set(s.slug, { at: Date.now(), data: status });
-        return status;
-      }),
-    );
-    return results;
+    return Promise.all(SERVERS.map((s) => getCachedStatus(s)));
   },
 );
