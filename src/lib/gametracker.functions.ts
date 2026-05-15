@@ -69,7 +69,7 @@ function parseMap(html: string): string | null {
   return null;
 }
 
-function parseStatusOnline(html: string): boolean {
+function parseStatusOnline(html: string): boolean | null {
   // GameTracker uses item_color_success with "Alive" / "Online"
   const m = html.match(
     /Status:[\s\S]{0,200}?<span class="item_color_(success|failure|fail)"[^>]*>\s*([^<]+?)\s*</i,
@@ -84,7 +84,16 @@ function parseStatusOnline(html: string): boolean {
   // Fallback: assume online if there are players
   const pc = html.match(/id="HTML_num_players"[^>]*>\s*(\d+)/i);
   if (pc && parseInt(pc[1], 10) > 0) return true;
-  return false;
+  return null;
+}
+
+function isGameTrackerInconclusive(html: string): boolean {
+  return (
+    /No Statistics Available/i.test(html) ||
+    !/id="HTML_num_players"/i.test(html) ||
+    !/id="HTML_max_players"/i.test(html) ||
+    !/Status:/i.test(html)
+  );
 }
 
 function parseAllTables(html: string): { headers: string[]; rows: string[][] }[] {
@@ -219,7 +228,11 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 
     const players = parsePlayersCount(infoHtml);
     const map = parseMap(infoHtml);
-    const online = parseStatusOnline(infoHtml);
+    const parsedOnline = parseStatusOnline(infoHtml);
+    if (parsedOnline === null && isGameTrackerInconclusive(infoHtml)) {
+      throw new Error("GameTracker sem dados confiáveis no momento");
+    }
+    const online = parsedOnline ?? false;
     const topPlayers = parseRankingTable(topHtml || infoHtml);
     const livePlayers = parseLivePlayers(infoHtml);
 
@@ -242,9 +255,10 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 // In-memory cache (per worker instance)
 // - FRESH_TTL_MS: tempo em que o dado é considerado fresco
 // - STALE_TTL_MS: tempo em que ainda servimos o dado em caso de falha do upstream
-const cache = new Map<string, { at: number; data: ServerStatus }>();
-const FRESH_TTL_MS = 30_000;
-const STALE_TTL_MS = 10 * 60_000;
+const cache = new Map<string, { at: number; data: ServerStatus; offlineStrikes: number }>();
+const FRESH_TTL_MS = 45_000;
+const STALE_TTL_MS = 30 * 60_000;
+const OFFLINE_CONFIRMATION_STRIKES = 3;
 
 async function getCachedStatus(server: ServerInfo): Promise<ServerStatus> {
   const now = Date.now();
@@ -253,7 +267,18 @@ async function getCachedStatus(server: ServerInfo): Promise<ServerStatus> {
 
   try {
     const status = await fetchStatus(server);
-    cache.set(server.slug, { at: now, data: status });
+    if (!status.online && cached?.data.online) {
+      const offlineStrikes = cached.offlineStrikes + 1;
+      if (offlineStrikes < OFFLINE_CONFIRMATION_STRIKES) {
+        cache.set(server.slug, { at: now, data: cached.data, offlineStrikes });
+        return {
+          ...cached.data,
+          fetchedAt: new Date().toISOString(),
+        };
+      }
+    }
+
+    cache.set(server.slug, { at: now, data: status, offlineStrikes: status.online ? 0 : (cached?.offlineStrikes ?? 0) });
     return status;
   } catch (err) {
     // Stale-while-error: se temos um valor recente, mantém ele para evitar
