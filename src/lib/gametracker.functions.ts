@@ -69,7 +69,7 @@ function parseMap(html: string): string | null {
   return null;
 }
 
-function parseStatusOnline(html: string): boolean {
+function parseStatusOnline(html: string): boolean | null {
   // GameTracker uses item_color_success with "Alive" / "Online"
   const m = html.match(
     /Status:[\s\S]{0,200}?<span class="item_color_(success|failure|fail)"[^>]*>\s*([^<]+?)\s*</i,
@@ -84,7 +84,16 @@ function parseStatusOnline(html: string): boolean {
   // Fallback: assume online if there are players
   const pc = html.match(/id="HTML_num_players"[^>]*>\s*(\d+)/i);
   if (pc && parseInt(pc[1], 10) > 0) return true;
-  return false;
+  return null;
+}
+
+function isGameTrackerInconclusive(html: string): boolean {
+  return (
+    /No Statistics Available/i.test(html) ||
+    !/id="HTML_num_players"/i.test(html) ||
+    !/id="HTML_max_players"/i.test(html) ||
+    !/Status:/i.test(html)
+  );
 }
 
 function parseAllTables(html: string): { headers: string[]; rows: string[][] }[] {
@@ -219,7 +228,11 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 
     const players = parsePlayersCount(infoHtml);
     const map = parseMap(infoHtml);
-    const online = parseStatusOnline(infoHtml);
+    const parsedOnline = parseStatusOnline(infoHtml);
+    if (parsedOnline === null && isGameTrackerInconclusive(infoHtml)) {
+      throw new Error("GameTracker sem dados confiáveis no momento");
+    }
+    const online = parsedOnline ?? false;
     const topPlayers = parseRankingTable(topHtml || infoHtml);
     const livePlayers = parseLivePlayers(infoHtml);
 
