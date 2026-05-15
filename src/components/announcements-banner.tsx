@@ -55,6 +55,7 @@ const COLOR_MAP: Record<Announcement["color"], { wrap: string; tag: string; icon
 };
 
 const dismissKey = (id: string) => `announcement-dismissed:${id}`;
+const EMPTY_ITEMS: Announcement[] = [];
 
 export function AnnouncementsBanner() {
   const { data } = useQuery({
