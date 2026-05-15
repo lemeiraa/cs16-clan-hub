@@ -35,7 +35,8 @@ export function ServerCard({ server, compact = false }: Props) {
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const online = status?.online && !server.comingSoon;
+  const statusKnown = Boolean(status) && !server.comingSoon;
+  const online = Boolean(status?.online) && !server.comingSoon;
   const playersTxt = server.comingSoon
     ? t("common.comingSoon")
     : isLoading
@@ -113,7 +114,9 @@ export function ServerCard({ server, compact = false }: Props) {
             <span
               className={cn(
                 "flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md backdrop-blur-sm border",
-                online
+                !statusKnown
+                  ? "bg-secondary/90 text-muted-foreground border-border/60"
+                  : online
                   ? "bg-success/90 text-success-foreground border-success/40"
                   : "bg-destructive/90 text-destructive-foreground border-destructive/40",
               )}
@@ -121,10 +124,14 @@ export function ServerCard({ server, compact = false }: Props) {
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
-                  online ? "bg-success-foreground animate-pulse" : "bg-destructive-foreground",
+                  !statusKnown
+                    ? "bg-muted-foreground"
+                    : online
+                      ? "bg-success-foreground animate-pulse"
+                      : "bg-destructive-foreground",
                 )}
               />
-              {online ? t("common.online") : t("common.offline")}
+              {!statusKnown ? "..." : online ? t("common.online") : t("common.offline")}
             </span>
           )}
         </div>
