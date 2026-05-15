@@ -44,6 +44,54 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          dismissible: boolean
+          effect: string
+          ends_at: string | null
+          id: string
+          message: string
+          sort_order: number
+          starts_at: string | null
+          tag: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          dismissible?: boolean
+          effect?: string
+          ends_at?: string | null
+          id?: string
+          message?: string
+          sort_order?: number
+          starts_at?: string | null
+          tag?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          dismissible?: boolean
+          effect?: string
+          ends_at?: string | null
+          id?: string
+          message?: string
+          sort_order?: number
+          starts_at?: string | null
+          tag?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           category: string
