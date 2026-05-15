@@ -234,6 +234,37 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
       fetchedAt: now,
     };
   } catch (err) {
+    // Marca como erro — quem chama decide se reutiliza cache antigo
+    throw err instanceof Error ? err : new Error("Erro ao consultar GameTracker");
+  }
+}
+
+// In-memory cache (per worker instance)
+// - FRESH_TTL_MS: tempo em que o dado é considerado fresco
+// - STALE_TTL_MS: tempo em que ainda servimos o dado em caso de falha do upstream
+const cache = new Map<string, { at: number; data: ServerStatus }>();
+const FRESH_TTL_MS = 30_000;
+const STALE_TTL_MS = 10 * 60_000;
+
+async function getCachedStatus(server: ServerInfo): Promise<ServerStatus> {
+  const now = Date.now();
+  const cached = cache.get(server.slug);
+  if (cached && now - cached.at < FRESH_TTL_MS) return cached.data;
+
+  try {
+    const status = await fetchStatus(server);
+    cache.set(server.slug, { at: now, data: status });
+    return status;
+  } catch (err) {
+    // Stale-while-error: se temos um valor recente, mantém ele para evitar
+    // que o servidor "pisque" entre online/offline por falha do GameTracker.
+    if (cached && now - cached.at < STALE_TTL_MS) {
+      return {
+        ...cached.data,
+        fetchedAt: new Date().toISOString(),
+        error: undefined,
+      };
+    }
     return {
       slug: server.slug,
       online: false,
@@ -242,15 +273,11 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
       maxPlayers: 0,
       livePlayers: [],
       topPlayers: [],
-      fetchedAt: now,
+      fetchedAt: new Date().toISOString(),
       error: err instanceof Error ? err.message : "Erro ao consultar GameTracker",
     };
   }
 }
-
-// In-memory cache (per worker instance) ~ 60s
-const cache = new Map<string, { at: number; data: ServerStatus }>();
-const TTL_MS = 20_000;
 
 export const getServerStatus = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) => input)
