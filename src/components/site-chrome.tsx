@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarUrlFor } from "@/lib/avatars";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { RoleBadge, pickPrimaryRole } from "@/components/role-badge";
+import { RoleBadgeGroup } from "@/components/role-badge";
 
 const NAV_KEYS = [
   { to: "/", key: "home" },
@@ -103,10 +103,8 @@ export function SiteHeader() {
                 className="h-7 w-7 rounded-md bg-card"
               />
               <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || t("nav.account")}</span>
-              {(() => {
-                const primary = pickPrimaryRole(roles);
-                return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
-              })()}
+              <RoleBadgeGroup roles={roles} />
+
             </Link>
           ) : (
             <Link
@@ -150,10 +148,8 @@ export function SiteHeader() {
                 className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md border border-border text-center mt-2 inline-flex items-center justify-center gap-2"
               >
                 <UserIcon className="h-4 w-4" /> {user.nick || t("nav.account")}
-                {(() => {
-                  const primary = pickPrimaryRole(roles);
-                  return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
-                })()}
+                <RoleBadgeGroup roles={roles} />
+
               </Link>
             ) : (
               <Link
