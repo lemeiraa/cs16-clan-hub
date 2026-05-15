@@ -186,56 +186,6 @@ function Index() {
   );
 }
 
-const ZP_DISMISS_KEY = "zp-launch-announcement-dismissed-v1";
-
-function ZombiePlagueAnnouncement() {
-  const { t } = useTranslation();
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(ZP_DISMISS_KEY) === "1");
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
-
-  if (dismissed) return null;
-
-  return (
-    <div className="border-b border-accent/40 bg-gradient-to-r from-accent/15 via-primary/10 to-accent/15 animate-pulse">
-      <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-        <span className="hidden sm:inline-flex relative h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/20 text-accent">
-          <span className="absolute inset-0 rounded-md bg-accent/40 animate-ping" />
-          <Megaphone className="relative h-5 w-5" />
-        </span>
-        <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
-            {t("home.zpAnnounceTag")}
-          </span>
-          <span className="font-display text-sm md:text-base font-bold text-foreground">
-            {t("home.zpAnnounceTitle")}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {t("home.zpAnnounceText")}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            try { localStorage.setItem(ZP_DISMISS_KEY, "1"); } catch { /* noop */ }
-            setDismissed(true);
-          }}
-          aria-label={t("home.zpAnnounceDismiss")}
-          className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function PlayersCounter() {
   const { t } = useTranslation();
   const fetchAll = useServerFn(getAllServersStatus);
