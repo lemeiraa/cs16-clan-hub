@@ -55,9 +55,10 @@ const COLOR_MAP: Record<Announcement["color"], { wrap: string; tag: string; icon
 };
 
 const dismissKey = (id: string) => `announcement-dismissed:${id}`;
+const EMPTY_ITEMS: Announcement[] = [];
 
 export function AnnouncementsBanner() {
-  const { data: items = [] } = useQuery({
+  const { data } = useQuery({
     queryKey: ["announcements", "active"],
     queryFn: async (): Promise<Announcement[]> => {
       const { data, error } = await supabase
@@ -70,7 +71,9 @@ export function AnnouncementsBanner() {
     },
     staleTime: 60_000,
   });
+  const items = data ?? EMPTY_ITEMS;
 
+  const itemsKey = items.map((a) => a.id).join(",");
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -83,7 +86,8 @@ export function AnnouncementsBanner() {
     } catch {
       /* noop */
     }
-  }, [items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey]);
 
   const visible = items.filter((a) => !dismissed.has(a.id));
   if (visible.length === 0) return null;
