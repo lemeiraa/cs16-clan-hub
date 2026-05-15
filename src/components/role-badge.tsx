@@ -1,4 +1,10 @@
 import { Shield, ShieldCheck } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STYLES: Record<string, string> = {
   admin:
@@ -43,5 +49,47 @@ export function RoleBadge({
       <Icon className={iconCls} />
       {showLabel && role}
     </span>
+  );
+}
+
+export function RoleBadgeGroup({
+  roles,
+  size = "xs",
+}: {
+  roles: string[];
+  size?: "xs" | "sm";
+}) {
+  if (!roles || roles.length === 0) return null;
+  const primary = pickPrimaryRole(roles);
+  if (!primary) return null;
+  const ordered = [
+    ...PRIORITY.filter((r) => roles.includes(r)),
+    ...roles.filter((r) => !PRIORITY.includes(r)),
+  ];
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1 cursor-default">
+            <RoleBadge role={primary} size={size} showLabel={false} />
+            {roles.length > 1 && (
+              <span className="text-[9px] font-bold text-muted-foreground tabular-nums">
+                +{roles.length - 1}
+              </span>
+            )}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          className="bg-card border border-border text-foreground p-2"
+        >
+          <div className="flex flex-col gap-1.5">
+            {ordered.map((r) => (
+              <RoleBadge key={r} role={r} size="sm" />
+            ))}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

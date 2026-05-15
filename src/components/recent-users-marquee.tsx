@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, UserPlus } from "lucide-react";
 import { getRecentUsers, type RecentUser } from "@/lib/users.functions";
 import { csAvatarFor } from "@/lib/cs-avatars";
-import { RoleBadge, pickPrimaryRole } from "@/components/role-badge";
+import { RoleBadgeGroup } from "@/components/role-badge";
 
 const PAGE_SIZE = 20;
 
@@ -58,10 +58,8 @@ function UserChip({ user, lang }: { user: RecentUser; lang: string }) {
       <div className="leading-tight">
         <div className="flex items-center gap-1.5">
           <p className="text-sm font-semibold">{user.nick}</p>
-          {(() => {
-            const primary = pickPrimaryRole(user.roles ?? []);
-            return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
-          })()}
+          <RoleBadgeGroup roles={user.roles ?? []} />
+
         </div>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {formatRelative(user.created_at, lang)}
