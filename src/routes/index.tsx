@@ -203,10 +203,11 @@ function ZombiePlagueAnnouncement() {
   if (dismissed) return null;
 
   return (
-    <div className="border-b border-accent/40 bg-gradient-to-r from-accent/15 via-primary/10 to-accent/15">
+    <div className="border-b border-accent/40 bg-gradient-to-r from-accent/15 via-primary/10 to-accent/15 animate-pulse">
       <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-        <span className="hidden sm:inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/20 text-accent">
-          <Megaphone className="h-5 w-5" />
+        <span className="hidden sm:inline-flex relative h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/20 text-accent">
+          <span className="absolute inset-0 rounded-md bg-accent/40 animate-ping" />
+          <Megaphone className="relative h-5 w-5" />
         </span>
         <div className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
