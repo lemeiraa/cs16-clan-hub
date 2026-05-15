@@ -255,9 +255,10 @@ async function fetchStatus(server: ServerInfo): Promise<ServerStatus> {
 // In-memory cache (per worker instance)
 // - FRESH_TTL_MS: tempo em que o dado é considerado fresco
 // - STALE_TTL_MS: tempo em que ainda servimos o dado em caso de falha do upstream
-const cache = new Map<string, { at: number; data: ServerStatus }>();
-const FRESH_TTL_MS = 30_000;
-const STALE_TTL_MS = 10 * 60_000;
+const cache = new Map<string, { at: number; data: ServerStatus; offlineStrikes: number }>();
+const FRESH_TTL_MS = 45_000;
+const STALE_TTL_MS = 30 * 60_000;
+const OFFLINE_CONFIRMATION_STRIKES = 3;
 
 async function getCachedStatus(server: ServerInfo): Promise<ServerStatus> {
   const now = Date.now();
@@ -266,7 +267,18 @@ async function getCachedStatus(server: ServerInfo): Promise<ServerStatus> {
 
   try {
     const status = await fetchStatus(server);
-    cache.set(server.slug, { at: now, data: status });
+    if (!status.online && cached?.data.online) {
+      const offlineStrikes = cached.offlineStrikes + 1;
+      if (offlineStrikes < OFFLINE_CONFIRMATION_STRIKES) {
+        cache.set(server.slug, { at: now, data: cached.data, offlineStrikes });
+        return {
+          ...cached.data,
+          fetchedAt: new Date().toISOString(),
+        };
+      }
+    }
+
+    cache.set(server.slug, { at: now, data: status, offlineStrikes: status.online ? 0 : (cached?.offlineStrikes ?? 0) });
     return status;
   } catch (err) {
     // Stale-while-error: se temos um valor recente, mantém ele para evitar
