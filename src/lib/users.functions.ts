@@ -7,6 +7,7 @@ export type RecentUser = {
   nick: string;
   avatar_url: string | null;
   created_at: string;
+  roles: string[];
 };
 
 export type PublicProfile = {
@@ -38,11 +39,25 @@ export const getRecentUsers = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
     if (error) throw new Error(error.message);
+    const ids = (rows ?? []).map((u) => u.id);
+    const rolesByUser = new Map<string, string[]>();
+    if (ids.length) {
+      const { data: roleRows } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", ids);
+      for (const r of roleRows ?? []) {
+        const arr = rolesByUser.get(r.user_id) ?? [];
+        arr.push(r.role);
+        rolesByUser.set(r.user_id, arr);
+      }
+    }
     return (rows ?? []).map((u) => ({
       id: u.id,
       nick: u.nick ?? "player",
       avatar_url: u.avatar_url,
       created_at: u.created_at,
+      roles: rolesByUser.get(u.id) ?? [],
     }));
   });
 
