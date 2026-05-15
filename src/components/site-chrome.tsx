@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarUrlFor } from "@/lib/avatars";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { RoleBadge, pickPrimaryRole } from "@/components/role-badge";
 
 const NAV_KEYS = [
   { to: "/", key: "home" },
@@ -19,6 +20,7 @@ export function SiteHeader() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
   const [user, setUser] = useState<{ id: string; nick: string | null; avatar_url: string | null; email: string } | null>(null);
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -26,13 +28,15 @@ export function SiteHeader() {
     let mounted = true;
     const check = async (uid: string | undefined, email: string | undefined) => {
       if (!mounted) return;
-      if (!uid) { setIsAdmin(false); setUser(null); return; }
+      if (!uid) { setIsAdmin(false); setRoles([]); setUser(null); return; }
       const [{ data: roleData }, { data: profile }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
         supabase.from("profiles").select("nick, avatar_url").eq("id", uid).maybeSingle(),
       ]);
       if (!mounted) return;
-      setIsAdmin(!!roleData);
+      const list = (roleData ?? []).map((r: { role: string }) => r.role);
+      setRoles(list);
+      setIsAdmin(list.includes("admin"));
       setUser({ id: uid, nick: profile?.nick ?? null, avatar_url: profile?.avatar_url ?? null, email: email ?? "" });
     };
     supabase.auth.getSession().then(({ data }) => check(data.session?.user?.id, data.session?.user?.email));
@@ -99,6 +103,10 @@ export function SiteHeader() {
                 className="h-7 w-7 rounded-md bg-card"
               />
               <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || t("nav.account")}</span>
+              {(() => {
+                const primary = pickPrimaryRole(roles);
+                return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
+              })()}
             </Link>
           ) : (
             <Link
@@ -142,6 +150,10 @@ export function SiteHeader() {
                 className="px-3 py-3 text-sm font-semibold uppercase tracking-wider rounded-md border border-border text-center mt-2 inline-flex items-center justify-center gap-2"
               >
                 <UserIcon className="h-4 w-4" /> {user.nick || t("nav.account")}
+                {(() => {
+                  const primary = pickPrimaryRole(roles);
+                  return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
+                })()}
               </Link>
             ) : (
               <Link
