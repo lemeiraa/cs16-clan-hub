@@ -103,6 +103,10 @@ export function SiteHeader() {
                 className="h-7 w-7 rounded-md bg-card"
               />
               <span className="text-sm font-semibold max-w-[120px] truncate">{user.nick || t("nav.account")}</span>
+              {(() => {
+                const primary = pickPrimaryRole(roles);
+                return primary ? <RoleBadge role={primary} size="xs" showLabel={false} /> : null;
+              })()}
             </Link>
           ) : (
             <Link
