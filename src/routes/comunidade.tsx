@@ -911,28 +911,31 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
                     <div className="flex items-center gap-0.5">
                       {m.role === "member" ? (
                         <button
+                          disabled={locked}
                           onClick={() => setConfirmAction({ type: "promote", member: m, nick: p.nick ?? "" })}
                           title="Promover a oficial"
                           aria-label={`Promover ${p.nick} a oficial`}
-                          className="p-1 rounded text-accent hover:bg-accent/15"
+                          className="p-1 rounded text-accent hover:bg-accent/15 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                         >
                           <ChevronUp className="h-4 w-4" />
                         </button>
                       ) : (
                         <button
+                          disabled={locked}
                           onClick={() => setConfirmAction({ type: "demote", member: m, nick: p.nick ?? "" })}
                           title="Rebaixar a membro"
                           aria-label={`Rebaixar ${p.nick} a membro`}
-                          className="p-1 rounded text-muted-foreground hover:bg-secondary"
+                          className="p-1 rounded text-muted-foreground hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                         >
                           <ChevronDown className="h-4 w-4" />
                         </button>
                       )}
                       <button
+                        disabled={locked}
                         onClick={() => setConfirmAction({ type: "kick", member: m, nick: p.nick ?? "" })}
                         title="Expulsar do clan"
                         aria-label={`Expulsar ${p.nick} do clan`}
-                        className="p-1 rounded text-destructive hover:bg-destructive/15"
+                        className="p-1 rounded text-destructive hover:bg-destructive/15 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                       >
                         <UserX className="h-4 w-4" />
                       </button>
@@ -945,23 +948,26 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
         </section>
       </aside>
 
-      <AlertDialog open={confirmAction !== null} onOpenChange={(o) => { if (!o) setConfirmAction(null); }}>
+      <AlertDialog open={confirmAction !== null} onOpenChange={(o) => { if (!o && !busy) setConfirmAction(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{confirmTexts?.title}</AlertDialogTitle>
             <AlertDialogDescription>{confirmTexts?.desc}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={runConfirm}
-              className={confirmTexts?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+              disabled={busy}
+              onClick={(e) => { e.preventDefault(); runConfirm(); }}
+              className={(confirmTexts?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 " : "") + "disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"}
             >
-              {confirmTexts?.action}
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {busy ? "Processando..." : confirmTexts?.action}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }
