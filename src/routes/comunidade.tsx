@@ -712,7 +712,7 @@ function NoClanView({ me }: { me: Me }) {
                     <span className="font-semibold truncate">{c.name}</span>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">{c.description || "Sem descrição."}</p>
-                  <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wider">{c.member_count} membro(s)</p>
+                  <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wider">{c.member_count}/12 membro(s){c.member_count >= 12 ? " · cheio" : ""}</p>
                 </li>
               ))}
             </ul>
