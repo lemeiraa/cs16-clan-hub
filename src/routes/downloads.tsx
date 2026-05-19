@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Monitor, Smartphone, Download, ExternalLink, CheckCircle2, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Monitor, Smartphone, Download, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/downloads")({
   component: DownloadsPage,
