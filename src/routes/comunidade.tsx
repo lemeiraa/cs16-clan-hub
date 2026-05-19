@@ -859,7 +859,7 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
             <div className="flex-1">
               <h2 className="font-display text-2xl font-bold">{clan.name}</h2>
               <p className="text-sm text-muted-foreground mt-1">{clan.description || "Sem descrição."}</p>
-              <p className="text-xs text-muted-foreground mt-2">{members.length} membro(s) · Criado em {new Date(clan.created_at).toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground mt-2">{members.length}/12 membro(s) · Criado em {new Date(clan.created_at).toLocaleDateString()}</p>
             </div>
             <div className="flex flex-col gap-2">
               {!isLeader && (
