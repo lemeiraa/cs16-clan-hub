@@ -6,6 +6,7 @@ export default {
     rules: "Reglas",
     report: "Reportar",
     downloads: "Descargas",
+    community: "Comunidad",
     account: "Mi cuenta",
     login: "Entrar",
     admin: "Admin",

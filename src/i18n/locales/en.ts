@@ -6,6 +6,7 @@ export default {
     rules: "Rules",
     report: "Report",
     downloads: "Downloads",
+    community: "Community",
     account: "My account",
     login: "Sign in",
     admin: "Admin",
