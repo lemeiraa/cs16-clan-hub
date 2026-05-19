@@ -13,6 +13,7 @@ import { Route as ServidoresRouteImport } from './routes/servidores'
 import { Route as ReportarRouteImport } from './routes/reportar'
 import { Route as RegrasRouteImport } from './routes/regras'
 import { Route as LojaRouteImport } from './routes/loja'
+import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -42,6 +43,11 @@ const RegrasRoute = RegrasRouteImport.update({
 const LojaRoute = LojaRouteImport.update({
   id: '/loja',
   path: '/loja',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadsRoute = DownloadsRouteImport.update({
+  id: '/downloads',
+  path: '/downloads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContaRoute = ContaRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
+  '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
   '/regras': typeof RegrasRoute
   '/reportar': typeof ReportarRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
+  '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
   '/regras': typeof RegrasRoute
   '/reportar': typeof ReportarRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/conta': typeof ContaRoute
+  '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
   '/regras': typeof RegrasRoute
   '/reportar': typeof ReportarRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/conta'
+    | '/downloads'
     | '/loja'
     | '/regras'
     | '/reportar'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/conta'
+    | '/downloads'
     | '/loja'
     | '/regras'
     | '/reportar'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/conta'
+    | '/downloads'
     | '/loja'
     | '/regras'
     | '/reportar'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ContaRoute: typeof ContaRoute
+  DownloadsRoute: typeof DownloadsRoute
   LojaRoute: typeof LojaRoute
   RegrasRoute: typeof RegrasRoute
   ReportarRoute: typeof ReportarRoute
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/loja'
       fullPath: '/loja'
       preLoaderRoute: typeof LojaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/downloads': {
+      id: '/downloads'
+      path: '/downloads'
+      fullPath: '/downloads'
+      preLoaderRoute: typeof DownloadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/conta': {
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ContaRoute: ContaRoute,
+  DownloadsRoute: DownloadsRoute,
   LojaRoute: LojaRoute,
   RegrasRoute: RegrasRoute,
   ReportarRoute: ReportarRoute,
