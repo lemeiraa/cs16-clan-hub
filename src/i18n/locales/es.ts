@@ -297,6 +297,7 @@ export default {
       "Abre Xash3D, elige el mod Counter-Strike y toca Iniciar.",
       "En el menú del juego, ve a Find Servers, agrega la IP del servidor CS Nostalgia y conéctate.",
     ],
+    hoverHint: "Haz clic para elegir esta versión",
     mobileNote: "Xash3D es el motor open-source que ejecuta CS 1.6 en Android. Es legal y gratuito.",
   },
 } as const;
