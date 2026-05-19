@@ -209,11 +209,13 @@ function AmmoCalculator({ ammo, servers, waAdmins, methods }: { ammo: AmmoCfg; s
 }
 
 function CheckoutForm({
-  productType, planTier, ammoPacks, amount, label, forcedServerSlug, servers, waAdmins, methods,
+  productType, planTier, ammoPacks, skinId, skinName, amount, label, forcedServerSlug, servers, waAdmins, methods,
 }: {
-  productType: "plan" | "ammo_packs";
+  productType: "plan" | "ammo_packs" | "skin";
   planTier?: string;
   ammoPacks?: number;
+  skinId?: string;
+  skinName?: string;
   amount: number;
   label: string;
   forcedServerSlug?: string;
@@ -236,7 +238,9 @@ function CheckoutForm({
 
   const productLabel = productType === "plan"
     ? `Cargo ${planTier?.toUpperCase()}`
-    : `${ammoPacks?.toLocaleString("pt-BR")} Ammo Packs`;
+    : productType === "ammo_packs"
+      ? `${ammoPacks?.toLocaleString("pt-BR")} Ammo Packs`
+      : `Skin ${skinName ?? ""}`;
   const serverName = servers.find((s) => s.slug === form.server_slug)?.name ?? form.server_slug;
 
   const waMessage = encodeURIComponent(
@@ -264,7 +268,9 @@ function CheckoutForm({
     try {
       const payload = productType === "plan"
         ? { product_type: "plan" as const, plan_tier: planTier!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp }
-        : { product_type: "ammo_packs" as const, ammo_packs: ammoPacks!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp };
+        : productType === "ammo_packs"
+          ? { product_type: "ammo_packs" as const, ammo_packs: ammoPacks!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp }
+          : { product_type: "skin" as const, skin_id: skinId!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp };
       const result = await createPix({ data: payload });
       setPix({ orderId: result.orderId, qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64, ticketUrl: result.ticketUrl, amount: result.amount });
       toast.success(t("shop.pixGenerated"));
