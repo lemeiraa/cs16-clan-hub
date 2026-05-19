@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2 } from "lucide-react";
+import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { createPixOrder, checkOrderPayment } from "@/lib/mercadopago.functions";
 import { cn } from "@/lib/utils";
