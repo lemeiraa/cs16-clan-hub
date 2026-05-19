@@ -110,7 +110,6 @@ function LojaPage() {
         </p>
       </div>
 
-      <div className="border-b border-border flex gap-1 mb-8">
       <div className="border-b border-border flex gap-1 mb-8 flex-wrap">
         <button onClick={() => setTab("plans")} className={cn("px-4 py-3 text-sm font-semibold uppercase tracking-wider border-b-2 transition",
           tab === "plans" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
