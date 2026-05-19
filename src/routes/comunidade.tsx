@@ -108,9 +108,33 @@ function useProfileCache() {
   return { cache, ensure };
 }
 
+function useInviteCount(meId: string | undefined) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!meId) return;
+    let alive = true;
+    const load = async () => {
+      const { count: c } = await supabase
+        .from("clan_invites")
+        .select("id", { count: "exact", head: true })
+        .eq("invitee_id", meId)
+        .eq("status", "pending");
+      if (alive) setCount(c ?? 0);
+    };
+    load();
+    const ch = supabase
+      .channel(`invite-count:${meId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "clan_invites", filter: `invitee_id=eq.${meId}` }, () => load())
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(ch); };
+  }, [meId]);
+  return count;
+}
+
 function ComunidadePage() {
   const me = useMe();
   const [tab, setTab] = useState<"friends" | "messages" | "clans">("friends");
+  const inviteCount = useInviteCount(me?.id);
 
   if (me === undefined) {
     return <div className="container mx-auto px-4 py-16 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -136,10 +160,10 @@ function ComunidadePage() {
 
       <div className="flex flex-wrap gap-2 mb-6 border-b border-border/60">
         {([
-          ["friends", "Amigos", Users],
-          ["messages", "Mensagens", MessageCircle],
-          ["clans", "Clans", Shield],
-        ] as const).map(([key, label, Icon]) => (
+          ["friends", "Amigos", Users, 0],
+          ["messages", "Mensagens", MessageCircle, 0],
+          ["clans", "Clans", Shield, inviteCount],
+        ] as const).map(([key, label, Icon, badge]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -151,9 +175,15 @@ function ComunidadePage() {
             }
           >
             <Icon className="h-4 w-4" /> {label}
+            {badge > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">
+                {badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
 
       {tab === "friends" && <FriendsPanel me={me} />}
       {tab === "messages" && <MessagesPanel me={me} />}
