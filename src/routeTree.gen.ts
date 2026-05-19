@@ -16,6 +16,7 @@ import { Route as LojaRouteImport } from './routes/loja'
 import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as ContaRouteImport } from './routes/conta'
 import { Route as ComunidadeRouteImport } from './routes/comunidade'
+import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as R403RouteImport } from './routes/403'
@@ -54,6 +55,11 @@ const DownloadsRoute = DownloadsRouteImport.update({
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunidadeRoute = ComunidadeRouteImport.update({
+  id: '/comunidade',
+  path: '/comunidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComunidadeRoute = ComunidadeRouteImport.update({
