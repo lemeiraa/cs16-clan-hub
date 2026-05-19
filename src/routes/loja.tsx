@@ -30,6 +30,7 @@ type Server = { slug: string; name: string; short: string };
 type WaAdmin = { id: string; name: string; phone: string; display: string };
 type AmmoCfg = { price_per_1000: number; min_qty: number; max_qty: number; step_qty: number; forced_server_slug: string | null };
 type PaymentMethods = { pix: boolean; whatsapp: boolean };
+type Skin = { id: string; server_slug: string; name: string; category: string; price_brl: number; image_url: string | null; description: string };
 
 const SHOP_TIMEOUT_MS = 12000;
 
