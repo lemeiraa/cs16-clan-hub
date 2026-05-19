@@ -92,6 +92,195 @@ export type Database = {
         }
         Relationships: []
       }
+      clan_invites: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          invitee_id: string
+          inviter_id: string
+          status: Database["public"]["Enums"]["clan_invite_status"]
+          updated_at: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          status?: Database["public"]["Enums"]["clan_invite_status"]
+          updated_at?: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
+          status?: Database["public"]["Enums"]["clan_invite_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_invites_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_members: {
+        Row: {
+          clan_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["clan_role"]
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["clan_role"]
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["clan_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_messages: {
+        Row: {
+          clan_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          clan_id: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          clan_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_messages_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string
+          id: string
+          name: string
+          owner_id: string
+          tag: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          owner_id: string
+          tag: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          tag?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["friendship_status"]
+          updated_at: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["friendship_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           category: string
@@ -439,6 +628,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_clan_invite: { Args: { _invite_id: string }; Returns: string }
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
+      get_clan_role: {
+        Args: { _clan: string; _user: string }
+        Returns: Database["public"]["Enums"]["clan_role"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -446,9 +641,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_clan_member: {
+        Args: { _clan: string; _user: string }
+        Returns: boolean
+      }
+      user_clan_id: { Args: { _user: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user" | "fundador" | "staff" | "vip" | "membro"
+      clan_invite_status: "pending" | "accepted" | "declined"
+      clan_role: "leader" | "officer" | "member"
+      friendship_status: "pending" | "accepted" | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +780,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "fundador", "staff", "vip", "membro"],
+      clan_invite_status: ["pending", "accepted", "declined"],
+      clan_role: ["leader", "officer", "member"],
+      friendship_status: ["pending", "accepted", "blocked"],
     },
   },
 } as const
