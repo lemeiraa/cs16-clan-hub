@@ -58,19 +58,21 @@ function LojaPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [p, s, w, a, m] = await withTimeout(Promise.all([
+        const [p, s, w, a, m, sk] = await withTimeout(Promise.all([
           supabase.from("plans").select("*").eq("active", true).order("sort_order"),
           supabase.from("servers").select("slug,name,short").eq("coming_soon", false).order("sort_order"),
           supabase.from("whatsapp_admins").select("*").eq("active", true).order("sort_order"),
           supabase.from("ammo_settings").select("*").eq("id", 1).single(),
           supabase.from("payment_methods").select("*"),
+          supabase.from("skins" as any).select("*").eq("active", true).order("sort_order"),
         ]), "Loja");
-        const error = p.error ?? s.error ?? w.error ?? a.error ?? m.error;
+        const error = p.error ?? s.error ?? w.error ?? a.error ?? m.error ?? sk.error;
         if (error) throw error;
         setPlans((p.data ?? []) as any);
         setServers((s.data ?? []) as any);
         setWaAdmins((w.data ?? []) as any);
         setAmmo((a.data ?? null) as any);
+        setSkins((sk.data ?? []) as any);
         const mm: PaymentMethods = { pix: true, whatsapp: true };
         (m.data ?? []).forEach((x: any) => { (mm as any)[x.id] = x.enabled; });
         setMethods(mm);
