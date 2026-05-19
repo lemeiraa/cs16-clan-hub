@@ -5,6 +5,7 @@ export default {
     shop: "Loja",
     rules: "Regras",
     report: "Reportar",
+    downloads: "Downloads",
     account: "Minha conta",
     login: "Entrar",
     admin: "Admin",

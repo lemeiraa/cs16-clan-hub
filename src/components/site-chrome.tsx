@@ -11,6 +11,7 @@ import { RoleBadgeGroup } from "@/components/role-badge";
 const NAV_KEYS = [
   { to: "/", key: "home" },
   { to: "/servidores", key: "servers" },
+  { to: "/downloads", key: "downloads" },
   { to: "/loja", key: "shop" },
   { to: "/regras", key: "rules" },
   { to: "/reportar", key: "report" },
