@@ -7,8 +7,12 @@ import { searchUsersByNick, getProfilesByIds, type PublicMiniProfile } from "@/l
 import { avatarUrlFor } from "@/lib/avatars";
 import {
   UserPlus, UserCheck, UserX, Users, MessageCircle, Send, Shield, Crown,
-  LogOut, Trash2, Search, Plus, Inbox, Loader2,
+  LogOut, Trash2, Search, Plus, Inbox, Loader2, ChevronUp, ChevronDown,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/comunidade")({
   component: ComunidadePage,
