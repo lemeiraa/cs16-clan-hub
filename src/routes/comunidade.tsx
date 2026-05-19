@@ -637,6 +637,14 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
   const [members, setMembers] = useState<ClanMemberRow[]>([]);
   const { cache, ensure } = useProfileCache();
   const [showInvite, setShowInvite] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<
+    | { type: "kick"; member: ClanMemberRow; nick: string }
+    | { type: "promote"; member: ClanMemberRow; nick: string }
+    | { type: "demote"; member: ClanMemberRow; nick: string }
+    | { type: "leave" }
+    | { type: "delete" }
+    | null
+  >(null);
 
   const load = useCallback(async () => {
     const [{ data: c }, { data: ms }] = await Promise.all([
@@ -660,27 +668,51 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
   const canInvite = membership.role === "leader" || membership.role === "officer";
   const isLeader = membership.role === "leader";
 
-  const leave = async () => {
-    if (isLeader) { toast.error("Líder não pode sair. Exclua o clan ou transfira a liderança."); return; }
-    if (!confirm("Sair do clan?")) return;
+  const doKick = async (m: ClanMemberRow) => {
+    const { error } = await supabase.from("clan_members").delete().eq("id", m.id);
+    if (error) toast.error(error.message); else toast.success("Membro removido.");
+  };
+  const doSetRole = async (m: ClanMemberRow, role: "officer" | "member") => {
+    const { error } = await supabase.from("clan_members").update({ role }).eq("id", m.id);
+    if (error) toast.error(error.message); else toast.success(role === "officer" ? "Promovido a oficial." : "Rebaixado a membro.");
+  };
+  const doLeave = async () => {
     const { error } = await supabase.from("clan_members").delete().eq("id", membership.id);
     if (error) toast.error(error.message);
   };
-  const kick = async (m: ClanMemberRow) => {
-    if (!confirm("Remover este membro?")) return;
-    const { error } = await supabase.from("clan_members").delete().eq("id", m.id);
-    if (error) toast.error(error.message);
-  };
-  const promote = async (m: ClanMemberRow) => {
-    const next = m.role === "member" ? "officer" : "member";
-    const { error } = await supabase.from("clan_members").update({ role: next }).eq("id", m.id);
-    if (error) toast.error(error.message);
-  };
-  const deleteClan = async () => {
-    if (!confirm(`Excluir clan ${clan?.name}? Esta ação não pode ser desfeita.`)) return;
+  const doDeleteClan = async () => {
     const { error } = await supabase.from("clans").delete().eq("id", membership.clan_id);
     if (error) toast.error(error.message); else toast.success("Clan excluído.");
   };
+
+  const confirmTexts = (() => {
+    if (!confirmAction) return null;
+    switch (confirmAction.type) {
+      case "kick":
+        return { title: `Remover ${confirmAction.nick}?`, desc: "O membro será expulso do clan e perderá acesso ao chat. Esta ação pode ser desfeita apenas com um novo convite.", action: "Expulsar", destructive: true };
+      case "promote":
+        return { title: `Promover ${confirmAction.nick} a oficial?`, desc: "Oficiais podem convidar e remover outros membros do clan.", action: "Promover", destructive: false };
+      case "demote":
+        return { title: `Rebaixar ${confirmAction.nick} a membro?`, desc: "Este usuário perderá os privilégios de oficial.", action: "Rebaixar", destructive: false };
+      case "leave":
+        return { title: "Sair do clan?", desc: "Você perderá acesso ao chat do clan e precisará de um novo convite para voltar.", action: "Sair", destructive: true };
+      case "delete":
+        return { title: `Excluir clan ${clan?.name}?`, desc: "Esta ação não pode ser desfeita. Todos os membros serão removidos e o histórico do chat será apagado.", action: "Excluir", destructive: true };
+    }
+  })();
+
+  const runConfirm = async () => {
+    if (!confirmAction) return;
+    switch (confirmAction.type) {
+      case "kick": await doKick(confirmAction.member); break;
+      case "promote": await doSetRole(confirmAction.member, "officer"); break;
+      case "demote": await doSetRole(confirmAction.member, "member"); break;
+      case "leave": await doLeave(); break;
+      case "delete": await doDeleteClan(); break;
+    }
+    setConfirmAction(null);
+  };
+
 
   if (!clan) return <div className="text-muted-foreground text-sm">Carregando...</div>;
 
