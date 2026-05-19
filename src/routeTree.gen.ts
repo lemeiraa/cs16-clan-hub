@@ -15,6 +15,7 @@ import { Route as RegrasRouteImport } from './routes/regras'
 import { Route as LojaRouteImport } from './routes/loja'
 import { Route as DownloadsRouteImport } from './routes/downloads'
 import { Route as ContaRouteImport } from './routes/conta'
+import { Route as ComunidadeRouteImport } from './routes/comunidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as R403RouteImport } from './routes/403'
@@ -53,6 +54,11 @@ const DownloadsRoute = DownloadsRouteImport.update({
 const ContaRoute = ContaRouteImport.update({
   id: '/conta',
   path: '/conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunidadeRoute = ComunidadeRouteImport.update({
+  id: '/comunidade',
+  path: '/comunidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/403': typeof R403Route
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/comunidade': typeof ComunidadeRoute
   '/conta': typeof ContaRoute
   '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/403': typeof R403Route
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/comunidade': typeof ComunidadeRoute
   '/conta': typeof ContaRoute
   '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/403': typeof R403Route
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/comunidade': typeof ComunidadeRoute
   '/conta': typeof ContaRoute
   '/downloads': typeof DownloadsRoute
   '/loja': typeof LojaRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/403'
     | '/admin'
     | '/auth'
+    | '/comunidade'
     | '/conta'
     | '/downloads'
     | '/loja'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/403'
     | '/admin'
     | '/auth'
+    | '/comunidade'
     | '/conta'
     | '/downloads'
     | '/loja'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/403'
     | '/admin'
     | '/auth'
+    | '/comunidade'
     | '/conta'
     | '/downloads'
     | '/loja'
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   R403Route: typeof R403Route
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ComunidadeRoute: typeof ComunidadeRoute
   ContaRoute: typeof ContaRoute
   DownloadsRoute: typeof DownloadsRoute
   LojaRoute: typeof LojaRoute
@@ -262,6 +275,13 @@ declare module '@tanstack/react-router' {
       path: '/conta'
       fullPath: '/conta'
       preLoaderRoute: typeof ContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunidade': {
+      id: '/comunidade'
+      path: '/comunidade'
+      fullPath: '/comunidade'
+      preLoaderRoute: typeof ComunidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   R403Route: R403Route,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  ComunidadeRoute: ComunidadeRoute,
   ContaRoute: ContaRoute,
   DownloadsRoute: DownloadsRoute,
   LojaRoute: LojaRoute,
@@ -371,3 +392,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
