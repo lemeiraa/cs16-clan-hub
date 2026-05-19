@@ -729,12 +729,12 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
             </div>
             <div className="flex flex-col gap-2">
               {!isLeader && (
-                <button onClick={leave} className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-destructive/15 hover:text-destructive inline-flex items-center gap-1">
+                <button onClick={() => setConfirmAction({ type: "leave" })} className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-destructive/15 hover:text-destructive inline-flex items-center gap-1">
                   <LogOut className="h-3.5 w-3.5" /> Sair
                 </button>
               )}
               {isLeader && (
-                <button onClick={deleteClan} className="px-3 py-1.5 text-xs rounded-md border border-destructive/40 text-destructive hover:bg-destructive/15 inline-flex items-center gap-1">
+                <button onClick={() => setConfirmAction({ type: "delete" })} className="px-3 py-1.5 text-xs rounded-md border border-destructive/40 text-destructive hover:bg-destructive/15 inline-flex items-center gap-1">
                   <Trash2 className="h-3.5 w-3.5" /> Excluir
                 </button>
               )}
@@ -760,6 +760,7 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
             {members.map((m) => {
               const p = cache[m.user_id];
               if (!p) return null;
+              const canManage = isLeader && m.user_id !== me.id && m.role !== "leader";
               return (
                 <li key={m.id} className="flex items-center gap-2">
                   <img src={avatarUrlFor(p.nick, p.avatar_url ?? undefined)} alt="" className="h-8 w-8 rounded-md" />
@@ -771,11 +772,36 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
                       {m.role}
                     </p>
                   </div>
-                  {isLeader && m.user_id !== me.id && (
-                    <>
-                      <button onClick={() => promote(m)} title={m.role === "member" ? "Promover" : "Rebaixar"} className="p-1 rounded text-accent hover:bg-accent/15"><Shield className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => kick(m)} title="Remover" className="p-1 rounded text-destructive hover:bg-destructive/15"><UserX className="h-3.5 w-3.5" /></button>
-                    </>
+                  {canManage && (
+                    <div className="flex items-center gap-0.5">
+                      {m.role === "member" ? (
+                        <button
+                          onClick={() => setConfirmAction({ type: "promote", member: m, nick: p.nick ?? "" })}
+                          title="Promover a oficial"
+                          aria-label={`Promover ${p.nick} a oficial`}
+                          className="p-1 rounded text-accent hover:bg-accent/15"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmAction({ type: "demote", member: m, nick: p.nick ?? "" })}
+                          title="Rebaixar a membro"
+                          aria-label={`Rebaixar ${p.nick} a membro`}
+                          className="p-1 rounded text-muted-foreground hover:bg-secondary"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setConfirmAction({ type: "kick", member: m, nick: p.nick ?? "" })}
+                        title="Expulsar do clan"
+                        aria-label={`Expulsar ${p.nick} do clan`}
+                        className="p-1 rounded text-destructive hover:bg-destructive/15"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </li>
               );
@@ -783,9 +809,28 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
           </ul>
         </section>
       </aside>
+
+      <AlertDialog open={confirmAction !== null} onOpenChange={(o) => { if (!o) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmTexts?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmTexts?.desc}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={runConfirm}
+              className={confirmTexts?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+            >
+              {confirmTexts?.action}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function InviteMemberForm({ me, clanId, onDone }: { me: Me; clanId: string; onDone: () => void }) {
   const [q, setQ] = useState("");
