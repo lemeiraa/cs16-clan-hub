@@ -21,7 +21,12 @@ const ammoSchema = baseSchema.extend({
   ammo_packs: z.number().int().min(1).max(10_000_000),
 });
 
-const inputSchema = z.discriminatedUnion("product_type", [planSchema, ammoSchema]);
+const skinSchema = baseSchema.extend({
+  product_type: z.literal("skin"),
+  skin_id: z.string().uuid(),
+});
+
+const inputSchema = z.discriminatedUnion("product_type", [planSchema, ammoSchema, skinSchema]);
 
 export const createPixOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => inputSchema.parse(input))
