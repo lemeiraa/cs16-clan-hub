@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Monitor, Smartphone, Download, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
