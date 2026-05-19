@@ -91,9 +91,12 @@ function PlatformCard({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "group text-left rounded-xl border-2 p-6 transition-all hover:scale-[1.02] cursor-pointer",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:scale-[1.02] focus-visible:border-accent",
         active
           ? "border-accent bg-accent/10"
           : "border-border bg-card hover:border-accent/50",
