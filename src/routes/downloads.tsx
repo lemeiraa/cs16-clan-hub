@@ -93,7 +93,7 @@ function PlatformCard({
     <button
       onClick={onClick}
       className={cn(
-        "group text-left rounded-xl border-2 p-6 transition-all hover:scale-[1.02]",
+        "group text-left rounded-xl border-2 p-6 transition-all hover:scale-[1.02] cursor-pointer",
         active
           ? "border-accent bg-accent/10"
           : "border-border bg-card hover:border-accent/50",
