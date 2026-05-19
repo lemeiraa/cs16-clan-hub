@@ -863,16 +863,17 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
             </div>
             <div className="flex flex-col gap-2">
               {!isLeader && (
-                <button onClick={() => setConfirmAction({ type: "leave" })} className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-destructive/15 hover:text-destructive inline-flex items-center gap-1">
+                <button disabled={locked} onClick={() => setConfirmAction({ type: "leave" })} className="px-3 py-1.5 text-xs rounded-md border border-border hover:bg-destructive/15 hover:text-destructive inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-foreground">
                   <LogOut className="h-3.5 w-3.5" /> Sair
                 </button>
               )}
               {isLeader && (
-                <button onClick={() => setConfirmAction({ type: "delete" })} className="px-3 py-1.5 text-xs rounded-md border border-destructive/40 text-destructive hover:bg-destructive/15 inline-flex items-center gap-1">
+                <button disabled={locked} onClick={() => setConfirmAction({ type: "delete" })} className="px-3 py-1.5 text-xs rounded-md border border-destructive/40 text-destructive hover:bg-destructive/15 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Trash2 className="h-3.5 w-3.5" /> Excluir
                 </button>
               )}
             </div>
+
           </div>
         </section>
 
