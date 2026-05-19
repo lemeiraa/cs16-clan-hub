@@ -111,6 +111,7 @@ function LojaPage() {
       </div>
 
       <div className="border-b border-border flex gap-1 mb-8">
+      <div className="border-b border-border flex gap-1 mb-8 flex-wrap">
         <button onClick={() => setTab("plans")} className={cn("px-4 py-3 text-sm font-semibold uppercase tracking-wider border-b-2 transition",
           tab === "plans" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
           {t("shop.tabPlans")}
@@ -119,11 +120,15 @@ function LojaPage() {
           tab === "ammo" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
           {t("shop.tabAmmo")}
         </button>
+        <button onClick={() => setTab("skins")} className={cn("px-4 py-3 text-sm font-semibold uppercase tracking-wider border-b-2 transition",
+          tab === "skins" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+          Skins
+        </button>
       </div>
 
-      {tab === "plans"
-        ? <PlansGrid plans={plans} servers={servers} waAdmins={waAdmins} methods={methods} />
-        : ammo && <AmmoCalculator ammo={ammo} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "plans" && <PlansGrid plans={plans} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "ammo" && ammo && <AmmoCalculator ammo={ammo} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "skins" && <SkinsGrid skins={skins} servers={servers} waAdmins={waAdmins} methods={methods} />}
     </section>
   );
 }
