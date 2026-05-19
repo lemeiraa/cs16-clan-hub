@@ -5,8 +5,8 @@ import { changeLang, type Lang } from "@/i18n";
 
 const OPTIONS: { code: Lang; flag: string; label: string }[] = [
   { code: "pt", flag: "🇧🇷", label: "PT" },
-  { code: "en", flag: "🇺🇸", label: "EN" },
   { code: "es", flag: "🇪🇸", label: "ES" },
+  { code: "en", flag: "🇺🇸", label: "EN" },
 ];
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
