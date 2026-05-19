@@ -883,14 +883,26 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
       <aside className="space-y-4">
         <section className="rounded-lg border border-border/60 bg-card/40 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display text-sm uppercase tracking-wider flex items-center gap-2"><Users className="h-4 w-4" /> Membros</h3>
+            <h3 className="font-display text-sm uppercase tracking-wider flex items-center gap-2">
+              <Users className="h-4 w-4" /> Membros
+              <span className={"ml-1 text-[10px] " + (members.length >= 12 ? "text-destructive" : "text-muted-foreground")}>{members.length}/12</span>
+            </h3>
             {canInvite && (
-              <button onClick={() => setShowInvite((v) => !v)} className="p-1 rounded text-accent hover:bg-accent/15" title="Convidar">
+              <button
+                onClick={() => setShowInvite((v) => !v)}
+                disabled={members.length >= 12}
+                title={members.length >= 12 ? "Clan cheio (12/12)" : "Convidar"}
+                className="p-1 rounded text-accent hover:bg-accent/15 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              >
                 <UserPlus className="h-4 w-4" />
               </button>
             )}
           </div>
-          {showInvite && canInvite && <InviteMemberForm me={me} clanId={clan.id} onDone={() => setShowInvite(false)} />}
+          {members.length >= 12 && (
+            <p className="text-[11px] text-destructive mb-2">Capacidade máxima atingida. Remova um membro para convidar outro.</p>
+          )}
+          {showInvite && canInvite && members.length < 12 && <InviteMemberForm me={me} clanId={clan.id} onDone={() => setShowInvite(false)} />}
+
           <ul className="space-y-2 mt-3">
             {members.map((m) => {
               const p = cache[m.user_id];
