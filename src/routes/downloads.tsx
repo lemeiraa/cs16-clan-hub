@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Monitor, Smartphone, Download, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -89,10 +90,21 @@ function PlatformCard({
   active: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
+  const showHint = () => {
+    if (active) return;
+    toast(t("downloads.hoverHint"), {
+      id: "downloads-hover-hint",
+      description: title,
+      duration: 1800,
+    });
+  };
   return (
     <button
       type="button"
       onClick={onClick}
+      onMouseEnter={showHint}
+      onFocus={showHint}
       aria-pressed={active}
       className={cn(
         "group text-left rounded-xl border-2 p-6 transition-all hover:scale-[1.02] cursor-pointer",
