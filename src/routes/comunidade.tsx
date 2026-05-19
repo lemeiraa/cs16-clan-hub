@@ -659,7 +659,7 @@ function NoClanView({ me }: { me: Me }) {
                       <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-bold font-mono flex-shrink-0">[{c?.tag ?? "..."}]</span>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-sm truncate">{c?.name ?? "Carregando..."}</p>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{inviteMemberCounts[i.clan_id] ?? 0} membro(s)</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{inviteMemberCounts[i.clan_id] ?? 0}/12 membro(s)</p>
                       </div>
                     </div>
                     {c?.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
