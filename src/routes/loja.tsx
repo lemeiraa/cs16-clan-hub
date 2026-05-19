@@ -435,3 +435,96 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
     </div>
   );
 }
+
+function SkinsGrid({ skins, servers, waAdmins, methods }: { skins: Skin[]; servers: Server[]; waAdmins: WaAdmin[]; methods: PaymentMethods }) {
+  const [serverSlug, setServerSlug] = useState<string>(servers[0]?.slug ?? "");
+  const filtered = skins.filter((s) => s.server_slug === serverSlug);
+
+  if (servers.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nenhum servidor disponível.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Escolha o servidor</label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {servers.map((s) => (
+            <button
+              key={s.slug}
+              onClick={() => setServerSlug(s.slug)}
+              className={cn(
+                "px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border transition",
+                serverSlug === s.slug
+                  ? "border-accent bg-accent/10 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              {s.short || s.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
+          <User className="mx-auto h-10 w-10 text-muted-foreground/60" />
+          <p className="mt-3 text-sm text-muted-foreground">Nenhuma skin disponível para este servidor ainda.</p>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((skin) => (
+            <SkinCard key={skin.id} skin={skin} servers={servers} waAdmins={waAdmins} methods={methods} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkinCard({ skin, servers, waAdmins, methods }: { skin: Skin; servers: Server[]; waAdmins: WaAdmin[]; methods: PaymentMethods }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-card flex flex-col">
+      <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-gradient-to-b from-secondary/60 to-secondary/20 border border-border/60">
+        {skin.image_url ? (
+          <img src={skin.image_url} alt={skin.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <SkinSilhouette />
+          </div>
+        )}
+        <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-background/70 backdrop-blur text-muted-foreground border border-border/60">
+          {skin.category}
+        </span>
+      </div>
+      <h3 className="font-display text-lg font-bold mt-3 line-clamp-1">{skin.name}</h3>
+      {skin.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{skin.description}</p>}
+      <p className="mt-2">
+        <span className="font-display text-2xl font-bold text-gradient">R$ {Number(skin.price_brl).toFixed(2).replace(".", ",")}</span>
+      </p>
+      <div className="mt-auto">
+        <CheckoutForm
+          productType="skin"
+          skinId={skin.id}
+          skinName={skin.name}
+          amount={Number(skin.price_brl)}
+          label="Comprar skin"
+          forcedServerSlug={skin.server_slug}
+          servers={servers}
+          waAdmins={waAdmins}
+          methods={methods}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SkinSilhouette() {
+  return (
+    <svg viewBox="0 0 100 140" className="h-[85%] w-auto text-foreground/25" fill="currentColor" aria-hidden="true">
+      <circle cx="50" cy="28" r="14" />
+      <path d="M22 130c0-18 12-30 28-30s28 12 28 30v6H22v-6z" />
+      <path d="M30 70c0-12 9-22 20-22s20 10 20 22v22c0 4-3 7-7 7H37c-4 0-7-3-7-7V70z" />
+    </svg>
+  );
+}
