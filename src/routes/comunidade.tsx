@@ -826,17 +826,26 @@ function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
     }
   })();
 
+  const [busy, setBusy] = useState(false);
   const runConfirm = async () => {
-    if (!confirmAction) return;
-    switch (confirmAction.type) {
-      case "kick": await doKick(confirmAction.member); break;
-      case "promote": await doSetRole(confirmAction.member, "officer"); break;
-      case "demote": await doSetRole(confirmAction.member, "member"); break;
-      case "leave": await doLeave(); break;
-      case "delete": await doDeleteClan(); break;
+    if (!confirmAction || busy) return;
+    setBusy(true);
+    try {
+      switch (confirmAction.type) {
+        case "kick": await doKick(confirmAction.member); break;
+        case "promote": await doSetRole(confirmAction.member, "officer"); break;
+        case "demote": await doSetRole(confirmAction.member, "member"); break;
+        case "leave": await doLeave(); break;
+        case "delete": await doDeleteClan(); break;
+      }
+    } finally {
+      setBusy(false);
+      setConfirmAction(null);
     }
-    setConfirmAction(null);
   };
+
+  const locked = confirmAction !== null || busy;
+
 
 
   if (!clan) return <div className="text-muted-foreground text-sm">Carregando...</div>;
