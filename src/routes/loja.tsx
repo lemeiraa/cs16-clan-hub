@@ -45,12 +45,13 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 
 function LojaPage() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"plans" | "ammo">("plans");
+  const [tab, setTab] = useState<"plans" | "ammo" | "skins">("plans");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [servers, setServers] = useState<Server[]>([]);
   const [waAdmins, setWaAdmins] = useState<WaAdmin[]>([]);
   const [ammo, setAmmo] = useState<AmmoCfg | null>(null);
   const [methods, setMethods] = useState<PaymentMethods>({ pix: true, whatsapp: true });
+  const [skins, setSkins] = useState<Skin[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
