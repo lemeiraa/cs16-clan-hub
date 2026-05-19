@@ -108,9 +108,33 @@ function useProfileCache() {
   return { cache, ensure };
 }
 
+function useInviteCount(meId: string | undefined) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!meId) return;
+    let alive = true;
+    const load = async () => {
+      const { count: c } = await supabase
+        .from("clan_invites")
+        .select("id", { count: "exact", head: true })
+        .eq("invitee_id", meId)
+        .eq("status", "pending");
+      if (alive) setCount(c ?? 0);
+    };
+    load();
+    const ch = supabase
+      .channel(`invite-count:${meId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "clan_invites", filter: `invitee_id=eq.${meId}` }, () => load())
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(ch); };
+  }, [meId]);
+  return count;
+}
+
 function ComunidadePage() {
   const me = useMe();
   const [tab, setTab] = useState<"friends" | "messages" | "clans">("friends");
+  const inviteCount = useInviteCount(me?.id);
 
   if (me === undefined) {
     return <div className="container mx-auto px-4 py-16 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -136,10 +160,10 @@ function ComunidadePage() {
 
       <div className="flex flex-wrap gap-2 mb-6 border-b border-border/60">
         {([
-          ["friends", "Amigos", Users],
-          ["messages", "Mensagens", MessageCircle],
-          ["clans", "Clans", Shield],
-        ] as const).map(([key, label, Icon]) => (
+          ["friends", "Amigos", Users, 0],
+          ["messages", "Mensagens", MessageCircle, 0],
+          ["clans", "Clans", Shield, inviteCount],
+        ] as const).map(([key, label, Icon, badge]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -151,9 +175,15 @@ function ComunidadePage() {
             }
           >
             <Icon className="h-4 w-4" /> {label}
+            {badge > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">
+                {badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
 
       {tab === "friends" && <FriendsPanel me={me} />}
       {tab === "messages" && <MessagesPanel me={me} />}
@@ -516,30 +546,45 @@ function NoClanView({ me }: { me: Me }) {
   const [clans, setClans] = useState<(ClanRow & { member_count: number })[]>([]);
   const [invites, setInvites] = useState<ClanInviteRow[]>([]);
   const [inviteClans, setInviteClans] = useState<Record<string, ClanRow>>({});
+  const [inviteMemberCounts, setInviteMemberCounts] = useState<Record<string, number>>({});
+  const { cache: inviterCache, ensure: ensureInviters } = useProfileCache();
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", tag: "", description: "" });
+  const [confirmDecline, setConfirmDecline] = useState<ClanInviteRow | null>(null);
+  const [busyInviteId, setBusyInviteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [{ data: cs }, { data: inv }] = await Promise.all([
       supabase.from("clans").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("clan_invites").select("*").eq("invitee_id", me.id).eq("status", "pending"),
+      supabase.from("clan_invites").select("*").eq("invitee_id", me.id).eq("status", "pending").order("created_at", { ascending: false }),
     ]);
     setClans((cs ?? []).map((c) => ({ ...c, member_count: 0 })));
     setInvites(inv ?? []);
     if (inv && inv.length) {
-      const { data: clanRows } = await supabase.from("clans").select("*").in("id", inv.map((i) => i.clan_id));
+      const clanIds = inv.map((i) => i.clan_id);
+      const [{ data: clanRows }, { data: memberRows }] = await Promise.all([
+        supabase.from("clans").select("*").in("id", clanIds),
+        supabase.from("clan_members").select("clan_id").in("clan_id", clanIds),
+      ]);
       const map: Record<string, ClanRow> = {};
       for (const c of clanRows ?? []) map[c.id] = c;
       setInviteClans(map);
+      const counts: Record<string, number> = {};
+      for (const m of memberRows ?? []) counts[m.clan_id] = (counts[m.clan_id] ?? 0) + 1;
+      setInviteMemberCounts(counts);
+      await ensureInviters(inv.map((i) => i.inviter_id));
+    } else {
+      setInviteClans({});
+      setInviteMemberCounts({});
     }
-    // counts
+    // counts for clan list
     if (cs && cs.length) {
       const { data: members } = await supabase.from("clan_members").select("clan_id").in("clan_id", cs.map((c) => c.id));
       const counts: Record<string, number> = {};
       for (const m of members ?? []) counts[m.clan_id] = (counts[m.clan_id] ?? 0) + 1;
       setClans(cs.map((c) => ({ ...c, member_count: counts[c.id] ?? 0 })));
     }
-  }, [me.id]);
+  }, [me.id, ensureInviters]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -566,17 +611,84 @@ function NoClanView({ me }: { me: Me }) {
   };
 
   const acceptInvite = async (id: string) => {
+    setBusyInviteId(id);
     const { error } = await supabase.rpc("accept_clan_invite", { _invite_id: id });
+    setBusyInviteId(null);
     if (error) toast.error(error.message); else toast.success("Você entrou no clan!");
   };
   const declineInvite = async (id: string) => {
+    setBusyInviteId(id);
     const { error } = await supabase.from("clan_invites").update({ status: "declined" }).eq("id", id);
-    if (error) toast.error(error.message);
+    setBusyInviteId(null);
+    if (error) toast.error(error.message); else toast.success("Convite recusado.");
+    setConfirmDecline(null);
+  };
+
+  const formatWhen = (iso: string) => {
+    const d = new Date(iso);
+    const diffMs = Date.now() - d.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "agora";
+    if (mins < 60) return `há ${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `há ${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `há ${days}d`;
+    return d.toLocaleDateString();
   };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
+        {/* Pending invites — promoted to top of main column when present */}
+        {invites.length > 0 && (
+          <section className="rounded-lg border border-accent/40 bg-accent/5 p-5">
+            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
+              <Inbox className="h-4 w-4 text-accent" />
+              Convites pendentes
+              <span className="ml-1 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold">{invites.length}</span>
+            </h2>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {invites.map((i) => {
+                const c = inviteClans[i.clan_id];
+                const inviter = inviterCache[i.inviter_id];
+                const busy = busyInviteId === i.id;
+                return (
+                  <li key={i.id} className="p-3 rounded-md border border-border/60 bg-background/60 flex flex-col gap-2">
+                    <div className="flex items-start gap-2">
+                      <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-bold font-mono flex-shrink-0">[{c?.tag ?? "..."}]</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm truncate">{c?.name ?? "Carregando..."}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{inviteMemberCounts[i.clan_id] ?? 0} membro(s)</p>
+                      </div>
+                    </div>
+                    {c?.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
+                    <p className="text-[11px] text-muted-foreground">
+                      Convite de <span className="font-semibold text-foreground">{inviter?.nick ?? "..."}</span> · {formatWhen(i.created_at)}
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        onClick={() => acceptInvite(i.id)}
+                        disabled={busy}
+                        className="flex-1 px-3 py-1.5 text-xs rounded bg-accent text-accent-foreground font-semibold uppercase tracking-wider hover:bg-accent/90 disabled:opacity-50 inline-flex items-center justify-center gap-1"
+                      >
+                        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />} Aceitar
+                      </button>
+                      <button
+                        onClick={() => setConfirmDecline(i)}
+                        disabled={busy}
+                        className="flex-1 px-3 py-1.5 text-xs rounded border border-border text-foreground font-semibold uppercase tracking-wider hover:bg-secondary disabled:opacity-50 inline-flex items-center justify-center gap-1"
+                      >
+                        <UserX className="h-3.5 w-3.5" /> Recusar
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
         <section className="rounded-lg border border-border/60 bg-card/40 p-5">
           <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2"><Plus className="h-4 w-4" /> Criar um clan</h2>
           <form onSubmit={createClan} className="grid gap-3 sm:grid-cols-[1fr_140px]">
@@ -609,28 +721,41 @@ function NoClanView({ me }: { me: Me }) {
       </div>
 
       <aside className="rounded-lg border border-border/60 bg-card/40 p-4 h-fit">
-        <h3 className="font-display text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Inbox className="h-4 w-4" /> Convites ({invites.length})</h3>
-        {invites.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum convite pendente.</p> : (
-          <ul className="space-y-3">
-            {invites.map((i) => {
-              const c = inviteClans[i.clan_id];
-              return (
-                <li key={i.id} className="p-2 rounded-md border border-border/60">
-                  <p className="font-semibold text-sm">[{c?.tag}] {c?.name}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{c?.description}</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => acceptInvite(i.id)} className="flex-1 px-2 py-1 text-xs rounded bg-accent text-accent-foreground font-semibold">Aceitar</button>
-                    <button onClick={() => declineInvite(i.id)} className="flex-1 px-2 py-1 text-xs rounded bg-secondary text-foreground font-semibold">Recusar</button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+        <h3 className="font-display text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Inbox className="h-4 w-4" /> Caixa de entrada</h3>
+        {invites.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Nenhum convite pendente no momento. Quando alguém te convidar para um clan, aparecerá aqui.</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Você tem <span className="font-semibold text-accent">{invites.length}</span> convite(s) pendente(s). Responda nos cards à esquerda.
+          </p>
         )}
       </aside>
+
+      <AlertDialog open={confirmDecline !== null} onOpenChange={(o) => { if (!o) setConfirmDecline(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Recusar convite{confirmDecline ? ` de [${inviteClans[confirmDecline.clan_id]?.tag ?? "?"}]` : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O convite será removido da sua caixa de entrada. Para entrar no clan depois, será necessário um novo convite.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDecline && declineInvite(confirmDecline.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Recusar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function MyClanView({ me, membership }: { me: Me; membership: ClanMemberRow }) {
   const [clan, setClan] = useState<ClanRow | null>(null);
