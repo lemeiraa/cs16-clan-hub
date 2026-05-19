@@ -21,7 +21,12 @@ const ammoSchema = baseSchema.extend({
   ammo_packs: z.number().int().min(1).max(10_000_000),
 });
 
-const inputSchema = z.discriminatedUnion("product_type", [planSchema, ammoSchema]);
+const skinSchema = baseSchema.extend({
+  product_type: z.literal("skin"),
+  skin_id: z.string().uuid(),
+});
+
+const inputSchema = z.discriminatedUnion("product_type", [planSchema, ammoSchema, skinSchema]);
 
 export const createPixOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => inputSchema.parse(input))
@@ -44,6 +49,8 @@ export const createPixOrder = createServerFn({ method: "POST" })
     let ammoPacks: number | null = null;
     let planTier: string | null = null;
 
+    let notes: string | null = null;
+
     if (data.product_type === "plan") {
       const { data: plan } = await supabaseAdmin
         .from("plans").select("tier, label, price_brl, active").eq("tier", data.plan_tier).maybeSingle();
@@ -51,7 +58,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
       amount = Number(plan.price_brl);
       planTier = plan.tier;
       description = `Cargo ${plan.label} - ${srv.short} (${data.nick})`;
-    } else {
+    } else if (data.product_type === "ammo_packs") {
       const { data: ammo } = await supabaseAdmin
         .from("ammo_settings").select("*").eq("id", 1).single();
       if (!ammo) throw new Error("Configuração de Ammo Packs indisponível");
@@ -59,12 +66,18 @@ export const createPixOrder = createServerFn({ method: "POST" })
       if (qty < ammo.min_qty || qty > ammo.max_qty) {
         throw new Error("Quantidade de Ammo Packs inválida");
       }
-      if (ammo.forced_server_slug && srv.slug !== ammo.forced_server_slug) {
-        // allow zombie-plague-* servers as default if no forced
-      }
       ammoPacks = qty;
       amount = (qty / 1000) * Number(ammo.price_per_1000);
       description = `${qty.toLocaleString("pt-BR")} Ammo Packs - ${srv.short} (${data.nick})`;
+    } else {
+      const { data: skin } = await supabaseAdmin
+        .from("skins" as any).select("id, name, price_brl, server_slug, active").eq("id", data.skin_id).maybeSingle();
+      const s = skin as any;
+      if (!s || !s.active) throw new Error("Skin inválida ou inativa");
+      if (s.server_slug !== data.server_slug) throw new Error("Skin não pertence a este servidor");
+      amount = Number(s.price_brl);
+      description = `Skin ${s.name} - ${srv.short} (${data.nick})`;
+      notes = `skin_id=${s.id}; skin_name=${s.name}`;
     }
 
     const { data: order, error } = await supabaseAdmin
@@ -81,6 +94,7 @@ export const createPixOrder = createServerFn({ method: "POST" })
         server_slug: data.server_slug,
         status: "pending",
         payment_provider: "mercadopago",
+        notes,
       })
       .select("id")
       .single();

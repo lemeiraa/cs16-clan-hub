@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2 } from "lucide-react";
+import { Crown, Shield, Star, Zap, Package, Copy, CheckCircle2, Loader2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { createPixOrder, checkOrderPayment } from "@/lib/mercadopago.functions";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,7 @@ type Server = { slug: string; name: string; short: string };
 type WaAdmin = { id: string; name: string; phone: string; display: string };
 type AmmoCfg = { price_per_1000: number; min_qty: number; max_qty: number; step_qty: number; forced_server_slug: string | null };
 type PaymentMethods = { pix: boolean; whatsapp: boolean };
+type Skin = { id: string; server_slug: string; name: string; category: string; price_brl: number; image_url: string | null; description: string };
 
 const SHOP_TIMEOUT_MS = 12000;
 
@@ -44,31 +45,34 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
 
 function LojaPage() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"plans" | "ammo">("plans");
+  const [tab, setTab] = useState<"plans" | "ammo" | "skins">("plans");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [servers, setServers] = useState<Server[]>([]);
   const [waAdmins, setWaAdmins] = useState<WaAdmin[]>([]);
   const [ammo, setAmmo] = useState<AmmoCfg | null>(null);
   const [methods, setMethods] = useState<PaymentMethods>({ pix: true, whatsapp: true });
+  const [skins, setSkins] = useState<Skin[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [p, s, w, a, m] = await withTimeout(Promise.all([
+        const [p, s, w, a, m, sk] = await withTimeout(Promise.all([
           supabase.from("plans").select("*").eq("active", true).order("sort_order"),
           supabase.from("servers").select("slug,name,short").eq("coming_soon", false).order("sort_order"),
           supabase.from("whatsapp_admins").select("*").eq("active", true).order("sort_order"),
           supabase.from("ammo_settings").select("*").eq("id", 1).single(),
           supabase.from("payment_methods").select("*"),
+          supabase.from("skins" as any).select("*").eq("active", true).order("sort_order"),
         ]), "Loja");
-        const error = p.error ?? s.error ?? w.error ?? a.error ?? m.error;
+        const error = p.error ?? s.error ?? w.error ?? a.error ?? m.error ?? sk.error;
         if (error) throw error;
         setPlans((p.data ?? []) as any);
         setServers((s.data ?? []) as any);
         setWaAdmins((w.data ?? []) as any);
         setAmmo((a.data ?? null) as any);
+        setSkins((sk.data ?? []) as any);
         const mm: PaymentMethods = { pix: true, whatsapp: true };
         (m.data ?? []).forEach((x: any) => { (mm as any)[x.id] = x.enabled; });
         setMethods(mm);
@@ -106,7 +110,7 @@ function LojaPage() {
         </p>
       </div>
 
-      <div className="border-b border-border flex gap-1 mb-8">
+      <div className="border-b border-border flex gap-1 mb-8 flex-wrap">
         <button onClick={() => setTab("plans")} className={cn("px-4 py-3 text-sm font-semibold uppercase tracking-wider border-b-2 transition",
           tab === "plans" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
           {t("shop.tabPlans")}
@@ -115,11 +119,15 @@ function LojaPage() {
           tab === "ammo" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
           {t("shop.tabAmmo")}
         </button>
+        <button onClick={() => setTab("skins")} className={cn("px-4 py-3 text-sm font-semibold uppercase tracking-wider border-b-2 transition",
+          tab === "skins" ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+          Skins
+        </button>
       </div>
 
-      {tab === "plans"
-        ? <PlansGrid plans={plans} servers={servers} waAdmins={waAdmins} methods={methods} />
-        : ammo && <AmmoCalculator ammo={ammo} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "plans" && <PlansGrid plans={plans} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "ammo" && ammo && <AmmoCalculator ammo={ammo} servers={servers} waAdmins={waAdmins} methods={methods} />}
+      {tab === "skins" && <SkinsGrid skins={skins} servers={servers} waAdmins={waAdmins} methods={methods} />}
     </section>
   );
 }
@@ -201,11 +209,13 @@ function AmmoCalculator({ ammo, servers, waAdmins, methods }: { ammo: AmmoCfg; s
 }
 
 function CheckoutForm({
-  productType, planTier, ammoPacks, amount, label, forcedServerSlug, servers, waAdmins, methods,
+  productType, planTier, ammoPacks, skinId, skinName, amount, label, forcedServerSlug, servers, waAdmins, methods,
 }: {
-  productType: "plan" | "ammo_packs";
+  productType: "plan" | "ammo_packs" | "skin";
   planTier?: string;
   ammoPacks?: number;
+  skinId?: string;
+  skinName?: string;
   amount: number;
   label: string;
   forcedServerSlug?: string;
@@ -228,7 +238,9 @@ function CheckoutForm({
 
   const productLabel = productType === "plan"
     ? `Cargo ${planTier?.toUpperCase()}`
-    : `${ammoPacks?.toLocaleString("pt-BR")} Ammo Packs`;
+    : productType === "ammo_packs"
+      ? `${ammoPacks?.toLocaleString("pt-BR")} Ammo Packs`
+      : `Skin ${skinName ?? ""}`;
   const serverName = servers.find((s) => s.slug === form.server_slug)?.name ?? form.server_slug;
 
   const waMessage = encodeURIComponent(
@@ -256,7 +268,9 @@ function CheckoutForm({
     try {
       const payload = productType === "plan"
         ? { product_type: "plan" as const, plan_tier: planTier!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp }
-        : { product_type: "ammo_packs" as const, ammo_packs: ammoPacks!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp };
+        : productType === "ammo_packs"
+          ? { product_type: "ammo_packs" as const, ammo_packs: ammoPacks!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp }
+          : { product_type: "skin" as const, skin_id: skinId!, ...form, steamid: form.steamid || null, contact_whatsapp: form.contact_whatsapp };
       const result = await createPix({ data: payload });
       setPix({ orderId: result.orderId, qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64, ticketUrl: result.ticketUrl, amount: result.amount });
       toast.success(t("shop.pixGenerated"));
@@ -419,5 +433,98 @@ function Field({ label, value, onChange, type = "text" }: { label: string; value
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full mt-1 rounded-md border border-border bg-input px-3 py-2 text-sm" />
     </div>
+  );
+}
+
+function SkinsGrid({ skins, servers, waAdmins, methods }: { skins: Skin[]; servers: Server[]; waAdmins: WaAdmin[]; methods: PaymentMethods }) {
+  const [serverSlug, setServerSlug] = useState<string>(servers[0]?.slug ?? "");
+  const filtered = skins.filter((s) => s.server_slug === serverSlug);
+
+  if (servers.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nenhum servidor disponível.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Escolha o servidor</label>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {servers.map((s) => (
+            <button
+              key={s.slug}
+              onClick={() => setServerSlug(s.slug)}
+              className={cn(
+                "px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-md border transition",
+                serverSlug === s.slug
+                  ? "border-accent bg-accent/10 text-foreground"
+                  : "border-border text-muted-foreground hover:bg-secondary",
+              )}
+            >
+              {s.short || s.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
+          <User className="mx-auto h-10 w-10 text-muted-foreground/60" />
+          <p className="mt-3 text-sm text-muted-foreground">Nenhuma skin disponível para este servidor ainda.</p>
+        </div>
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((skin) => (
+            <SkinCard key={skin.id} skin={skin} servers={servers} waAdmins={waAdmins} methods={methods} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkinCard({ skin, servers, waAdmins, methods }: { skin: Skin; servers: Server[]; waAdmins: WaAdmin[]; methods: PaymentMethods }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-card flex flex-col">
+      <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-gradient-to-b from-secondary/60 to-secondary/20 border border-border/60">
+        {skin.image_url ? (
+          <img src={skin.image_url} alt={skin.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <SkinSilhouette />
+          </div>
+        )}
+        <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-background/70 backdrop-blur text-muted-foreground border border-border/60">
+          {skin.category}
+        </span>
+      </div>
+      <h3 className="font-display text-lg font-bold mt-3 line-clamp-1">{skin.name}</h3>
+      {skin.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{skin.description}</p>}
+      <p className="mt-2">
+        <span className="font-display text-2xl font-bold text-gradient">R$ {Number(skin.price_brl).toFixed(2).replace(".", ",")}</span>
+      </p>
+      <div className="mt-auto">
+        <CheckoutForm
+          productType="skin"
+          skinId={skin.id}
+          skinName={skin.name}
+          amount={Number(skin.price_brl)}
+          label="Comprar skin"
+          forcedServerSlug={skin.server_slug}
+          servers={servers}
+          waAdmins={waAdmins}
+          methods={methods}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SkinSilhouette() {
+  return (
+    <svg viewBox="0 0 100 140" className="h-[85%] w-auto text-foreground/25" fill="currentColor" aria-hidden="true">
+      <circle cx="50" cy="28" r="14" />
+      <path d="M22 130c0-18 12-30 28-30s28 12 28 30v6H22v-6z" />
+      <path d="M30 70c0-12 9-22 20-22s20 10 20 22v22c0 4-3 7-7 7H37c-4 0-7-3-7-7V70z" />
+    </svg>
   );
 }
